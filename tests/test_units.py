@@ -87,3 +87,12 @@ def test_extension_version_platform_suffix(tmp_path):
     ctx = Context(home=tmp_path, env={}, os="macos", isolated=True)
     got = {i: v for i, v, _ in extension_dirs(ctx, tmp_path)}
     assert got == {"anthropic.claude-code": "2.1.330", "github.copilot-chat": "0.30.0"}
+
+
+@pytest.mark.parametrize("pkg,pinned", [
+    ("git+https://github.com/prag-ai/ai-tool-audit@v0.2.0", True),
+    ("git+https://github.com/prag-ai/ai-tool-audit@" + "a" * 40, True),
+    ("git+https://github.com/prag-ai/ai-tool-audit", False),
+])
+def test_pinning_git(pkg, pinned):
+    assert _is_pinned(pkg, "pypi") is pinned

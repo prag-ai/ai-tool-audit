@@ -117,7 +117,7 @@ pipx install git+https://github.com/prag-ai/ai-tool-audit
 3. Install without network access (Python 3.11+ required on the target):
 
 ```bash
-python3 -m pip install --no-index ai_tool_audit-0.1.0-py3-none-any.whl
+python3 -m pip install --no-index ai_tool_audit-0.2.0-py3-none-any.whl
 ai-tool-audit scan --html report.html
 ```
 
@@ -134,6 +134,36 @@ ai-tool-audit scan --enterprise              # also check managed-policy rules
 ai-tool-audit baseline save | diff           # MCP server drift
 ai-tool-audit rules [RULE-ID]                # rule list / details
 ```
+
+### Use it from your AI tool (MCP server)
+
+Connect it to Claude Code, Cursor, Codex and the like as an MCP server, then just ask **"audit my AI tool settings"** in chat — the assistant runs the scan, explains the findings and helps you fix them right there.
+
+The MCP server follows the same rules as the scanner: it runs locally over stdio, makes no network calls and needs no extra packages, so it works on air-gapped machines too.
+
+```bash
+# after installing as above
+claude mcp add ai-tool-audit -- ai-tool-audit mcp      # Claude Code
+codex mcp add ai-tool-audit -- ai-tool-audit mcp       # Codex CLI
+```
+
+For tools configured through a JSON file (Cursor, Claude Desktop, VS Code):
+
+```json
+{
+  "mcpServers": {
+    "ai-tool-audit": { "command": "ai-tool-audit", "args": ["mcp"] }
+  }
+}
+```
+
+| MCP tool | What it does |
+|---|---|
+| `scan` | Audits this machine (and the repositories you name). Secrets show only their first 4 characters. |
+| `explain_rule` | Explains a rule: why it matters, how to fix it, related incidents. Omit the ID to list all rules. |
+| `list_files` | Lists the files a scan would read, without opening them. |
+| `baseline_diff` | Finds MCP servers added or changed since the saved baseline. |
+| `baseline_save` | Saves the current MCP servers as the baseline. The only tool that writes a file. |
 
 ## Screenshots
 

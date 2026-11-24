@@ -82,6 +82,7 @@ AI 코딩 도구는 개발자 권한으로 파일을 읽고 명령을 실행합�
 ### 개발자 개인 — 내 PC 5분 점검
 
 - 내 PC에서 `scan --html report.html`을 돌려 보고서를 열고 "먼저 고칠 것"부터 고칩니다.
+- 쓰고 있는 AI 도구에 MCP 서버로 연결해 두면, "내 PC 점검해 줘" 한마디로 점검하고 그 자리에서 고칠 수 있습니다.
 - **남이 만든 저장소를 열기 전에** `scan --repo <저장소 경로>`를 돌립니다. 저장소에 든 훅·MCP 서버·`folderOpen` 작업은 편집기로 여는 순간 실행될 수 있습니다.
 
 ### 보안 컨설턴트·점검 업체
@@ -143,7 +144,7 @@ pipx install git+https://github.com/prag-ai/ai-tool-audit
 3. 대상 PC에서 인터넷 없이 설치합니다(대상 PC에 Python 3.11 이상 필요).
 
 ```bash
-python3 -m pip install --no-index ai_tool_audit-0.1.0-py3-none-any.whl
+python3 -m pip install --no-index ai_tool_audit-0.2.0-py3-none-any.whl
 ai-tool-audit scan --html report.html
 ```
 
@@ -170,6 +171,36 @@ ai-tool-audit baseline diff                  # 기준선 이후 바뀐 MCP 서�
 ai-tool-audit rules                          # 규칙 목록
 ai-tool-audit rules CC-PERM-004              # 규칙 설명과 근거 사건
 ```
+
+### AI 도구 안에서 쓰기 (MCP 서버)
+
+Claude Code·Cursor·Codex 같은 AI 도구에 MCP 서버로 연결하면, 대화 중에 **"내 PC AI 설정 점검해 줘"**라고 말하는 것만으로 점검하고 결과를 설명받을 수 있습니다. 고치는 일도 그 자리에서 AI와 함께 하면 됩니다.
+
+MCP 서버도 점검기와 같은 원칙을 지킵니다. 내 PC 안에서만 돌고(stdio), 네트워크를 쓰지 않으며, 추가로 설치할 패키지가 없습니다. 그래서 망분리 PC에서도 그대로 씁니다.
+
+```bash
+# 위의 방법으로 설치한 뒤
+claude mcp add ai-tool-audit -- ai-tool-audit mcp      # Claude Code
+codex mcp add ai-tool-audit -- ai-tool-audit mcp       # Codex CLI
+```
+
+Cursor·Claude Desktop·VS Code처럼 설정 파일로 등록하는 도구는 아래처럼 적습니다.
+
+```json
+{
+  "mcpServers": {
+    "ai-tool-audit": { "command": "ai-tool-audit", "args": ["mcp"] }
+  }
+}
+```
+
+| MCP 도구 | 하는 일 |
+|---|---|
+| `scan` | 이 PC(와 지정한 저장소)를 점검해 결과를 돌려줍니다. 비밀값은 앞 4글자만 나갑니다. |
+| `explain_rule` | 규칙 하나의 이유·고치는 법·근거 사건을 설명합니다. ID를 빼면 규칙 목록을 줍니다. |
+| `list_files` | 점검할 때 읽는 파일 목록을 보여 줍니다(아무것도 열지 않음). |
+| `baseline_diff` | 저장해 둔 기준선 이후 새로 생기거나 바뀐 MCP 서버를 찾습니다. |
+| `baseline_save` | 지금 MCP 서버 목록을 기준선으로 저장합니다. 이 도구만 파일을 하나 씁니다. |
 
 ## 결과 화면
 

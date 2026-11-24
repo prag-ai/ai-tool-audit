@@ -1,4 +1,4 @@
-"""명령 진입점: ai-tool-audit scan | baseline | files | rules  (한국어·영어)"""
+"""명령 진입점: ai-tool-audit scan | baseline | files | rules | mcp  (한국어·영어)"""
 from __future__ import annotations
 
 import argparse
@@ -186,6 +186,9 @@ def main(argv=None) -> int:
     r.add_argument("id", nargs="?", help="규칙 ID / rule ID (e.g. CC-PERM-001)")
     lang_opt(r)
     r.set_defaults(fn=cmd_rules)
+
+    m = sub.add_parser("mcp", help="MCP 서버로 실행(stdio) / run as an MCP server over stdio")
+    m.set_defaults(fn=lambda a: __import__("ai_tool_audit.mcp_server", fromlist=["serve"]).serve())
 
     a = p.parse_args(argv)
     return a.fn(a)

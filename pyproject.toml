@@ -1,6 +1,6 @@
 [project]
 name = "ai-tool-audit"
-version = "0.1.0"
+version = "0.2.0"
 description = "개발자 PC의 AI 도구(Claude Code·Codex·Gemini CLI·VS Code·Cursor·MCP) 설정을 읽기 전용으로 점검하는 도구"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,14 +19,11 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: Security",
 ]
-dependencies = []          # 점검기 본체는 표준 라이브러리만 쓴다
+dependencies = []          # 점검기와 MCP 서버 모두 표준 라이브러리만 쓴다
 
 [project.urls]
 Homepage = "https://github.com/prag-ai/ai-tool-audit"
 Issues = "https://github.com/prag-ai/ai-tool-audit/issues"
-
-[project.optional-dependencies]
-mcp = ["mcp>=2.3"]
 
 [project.scripts]
 ai-tool-audit = "ai_tool_audit.cli:main"

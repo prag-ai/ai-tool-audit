@@ -112,8 +112,8 @@ def _is_pinned(pkg: str, eco: str) -> bool:
             return False
         ver = body.split("@", 1)[1]
         return bool(re.match(r"^v?\d+\.\d+\.\d+", ver))   # latest·^1·~1·1.x 는 고정이 아님
-    # pypi: 이름==1.2.3 또는 이름@1.2.3
-    return bool(re.search(r"(==|@)\d+(\.\d+)*$", pkg))
+    # pypi: 이름==1.2.3, 이름@1.2.3, git+주소@v1.2.3 또는 커밋 해시
+    return bool(re.search(r"(==|@)v?\d+(\.\d+)*$", pkg) or re.search(r"@[0-9a-f]{40}$", pkg))
 
 
 @check("mcp_unpinned")
