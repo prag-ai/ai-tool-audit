@@ -2,7 +2,16 @@
 
 **A tool for security teams to audit the AI coding tools on developer machines.**
 
-It reads — and only reads — the configuration of Claude Code, OpenAI Codex CLI, Google Gemini CLI, Claude Desktop, VS Code / Cursor (plus AI extensions) and the MCP servers registered in them, finds risky settings, and writes a report where every finding links to the public incident that makes it matter. A scan of one machine takes about a second, uses only the Python standard library, and sends nothing anywhere, so it also runs on air-gapped corporate machines.
+It reads — and only reads — the configuration of Claude Code, OpenAI Codex CLI, Google Gemini CLI, Claude Desktop, VS Code / Cursor (plus AI extensions) and the MCP servers registered in them, finds risky settings, and writes a report where every finding links to the public incident that makes it matter. A scan of one machine takes about a second, and uses only the Python standard library.
+
+> ### 🔒 Built for air-gapped and restricted networks
+>
+> - **No network access at all.** There is no network code; no findings, settings or secrets leave the machine. Tests enforce this.
+> - **One file to install.** No dependencies — copy the `.whl` from [Releases](https://github.com/prag-ai/ai-tool-audit/releases) over USB or an internal repository and install it offline.
+> - **Advisory matching works offline.** Public security advisory data ships inside the tool.
+> - **The HTML report makes no external requests** — no web fonts, no remote scripts.
+>
+> Made for banks, government and other environments where tools that phone home are not allowed.
 
 > Output is in English or Korean. The terminal follows your system language (`--lang en` to force English). The HTML report carries both languages and opens in **your browser's language**, with a switch in the top-right corner.
 
@@ -99,6 +108,17 @@ Python 3.11+. The scanner uses only the standard library.
 uv tool install git+https://github.com/prag-ai/ai-tool-audit
 # or
 pipx install git+https://github.com/prag-ai/ai-tool-audit
+```
+
+### Offline / air-gapped install
+
+1. On a connected machine, download `ai_tool_audit-<version>-py3-none-any.whl` from [Releases](https://github.com/prag-ai/ai-tool-audit/releases) and check its SHA-256 against the release notes.
+2. Move it to the target machine (USB, internal artifact store).
+3. Install without network access (Python 3.11+ required on the target):
+
+```bash
+python3 -m pip install --no-index ai_tool_audit-0.1.0-py3-none-any.whl
+ai-tool-audit scan --html report.html
 ```
 
 ## Usage

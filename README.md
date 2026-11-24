@@ -2,7 +2,16 @@
 
 **회사 보안 담당자가 개발자 PC의 AI 코딩 도구 위험을 점검하는 도구입니다.**
 
-개발자 PC에 설치된 Claude Code, OpenAI Codex CLI, Google Gemini CLI, Claude Desktop, VS Code·Cursor(+ AI 확장)와 여기에 등록한 MCP 서버의 설정을 **읽기만 해서** 위험한 곳을 찾고, 근거 사건이 달린 보고서를 한국어·영어로 만듭니다. 표준 라이브러리만 쓰는 파이썬 도구라 PC 한 대 점검이 1초 안팎에 끝나고, 아무것도 밖으로 보내지 않아 내부망 PC에서도 돌릴 수 있습니다.
+개발자 PC에 설치된 Claude Code, OpenAI Codex CLI, Google Gemini CLI, Claude Desktop, VS Code·Cursor(+ AI 확장)와 여기에 등록한 MCP 서버의 설정을 **읽기만 해서** 위험한 곳을 찾고, 근거 사건이 달린 보고서를 한국어·영어로 만듭니다. 표준 라이브러리만 쓰는 파이썬 도구라 PC 한 대 점검이 1초 안팎에 끝납니다.
+
+> ### 🔒 인터넷이 막힌 내부망(망분리) PC에서도 그대로 씁니다
+>
+> - **네트워크를 전혀 쓰지 않습니다.** 네트워크 코드가 없고, 점검 결과·설정·비밀값 무엇도 밖으로 나가지 않습니다. 시험으로 막아 둡니다.
+> - **설치 파일 하나면 됩니다.** 다른 패키지가 필요 없어서, [릴리스](https://github.com/prag-ai/ai-tool-audit/releases)의 `.whl` 파일 하나를 USB나 사내 자료실로 옮겨 설치합니다.
+> - **보안 권고 대조도 인터넷 없이 합니다.** 공개 보안 권고 데이터를 도구 안에 담아 와서, 설치된 버전과 바로 맞춰 봅니다.
+> - **보고서를 열 때도 외부 요청이 없습니다.** 글꼴·스크립트를 밖에서 불러오지 않습니다.
+>
+> 금융권·공공기관처럼 외부로 데이터를 보내는 도구를 쓸 수 없는 곳을 위해 이렇게 만들었습니다.
 
 [English](README.en.md) · [규칙 목록](docs/규칙목록.md) · [회사에 도입할 때 참고할 것](docs/도입전_확인사항.md)
 
@@ -123,6 +132,17 @@ Python 3.11 이상이 필요합니다. 점검기 본체는 표준 라이브러�
 uv tool install git+https://github.com/prag-ai/ai-tool-audit
 # 또는 pipx
 pipx install git+https://github.com/prag-ai/ai-tool-audit
+```
+
+### 인터넷이 막힌 PC(망분리)에 설치하기
+
+1. 인터넷이 되는 PC에서 [릴리스](https://github.com/prag-ai/ai-tool-audit/releases) 페이지의 `ai_tool_audit-<버전>-py3-none-any.whl`을 받습니다. 같은 페이지의 SHA-256 값과 맞는지 확인합니다.
+2. USB나 사내 자료실로 대상 PC에 옮깁니다.
+3. 대상 PC에서 인터넷 없이 설치합니다(대상 PC에 Python 3.11 이상 필요).
+
+```bash
+python3 -m pip install --no-index ai_tool_audit-0.1.0-py3-none-any.whl
+ai-tool-audit scan --html report.html
 ```
 
 설치 없이 한 번만 돌려 보려면:
