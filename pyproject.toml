@@ -1,6 +1,6 @@
 [project]
 name = "ai-tool-audit"
-version = "0.2.0"
+version = "0.2.1"
 description = "개발자 PC의 AI 도구(Claude Code·Codex·Gemini CLI·VS Code·Cursor·MCP) 설정을 읽기 전용으로 점검하는 도구"
 readme = "README.md"
 requires-python = ">=3.11"

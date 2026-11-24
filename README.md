@@ -1,5 +1,7 @@
 # ai-tool-audit
 
+<!-- mcp-name: io.github.prag-ai/ai-tool-audit -->
+
 **회사 보안 담당자가 개발자 PC의 AI 코딩 도구 위험을 점검하는 도구입니다.**
 
 개발자 PC에 설치된 Claude Code, OpenAI Codex CLI, Google Gemini CLI, Claude Desktop, VS Code·Cursor(+ AI 확장)와 여기에 등록한 MCP 서버의 설정을 **읽기만 해서** 위험한 곳을 찾고, 근거 사건이 달린 보고서를 한국어·영어로 만듭니다. 표준 라이브러리만 쓰는 파이썬 도구라 PC 한 대 점검이 1초 안팎에 끝납니다.
@@ -15,9 +17,9 @@
 >
 > 금융권·공공기관처럼 외부로 데이터를 보내는 도구를 쓸 수 없는 곳을 위해 이렇게 만들었습니다.
 
-[English](README.en.md) · [규칙 목록](docs/규칙목록.md) · [회사에 도입할 때 참고할 것](docs/도입전_확인사항.md)
+[English](https://github.com/prag-ai/ai-tool-audit/blob/main/README.en.md) · [규칙 목록](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/규칙목록.md) · [회사에 도입할 때 참고할 것](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/도입전_확인사항.md)
 
-![ai-tool-audit scan 실행 화면](docs/images/scan-terminal-ko.png)
+![ai-tool-audit scan 실행 화면](https://raw.githubusercontent.com/prag-ai/ai-tool-audit/main/docs/images/scan-terminal-ko.png)
 
 *`ai-tool-audit scan` 실행 화면. 위험한 설정을 일부러 모아 둔 시험용 가짜 환경을 점검한 결과이며, 키는 모두 가짜입니다.*
 
@@ -91,7 +93,7 @@ AI 코딩 도구는 개발자 권한으로 파일을 읽고 명령을 실행합�
 
 ## 기존 도구와 무엇이 다른가
 
-2026년 11월 24일 기준으로 공개된 오픈소스를 조사했습니다(조사 기록: [docs/research/03](docs/research/03_landscape_license_incidents.md)). 조사한 범위에서 아래 세 가지를 함께 하는 도구는 찾지 못했습니다.
+2026년 11월 24일 기준으로 공개된 오픈소스를 조사했습니다(조사 기록: [docs/research/03](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/research/03_landscape_license_incidents.md)). 조사한 범위에서 아래 세 가지를 함께 하는 도구는 찾지 못했습니다.
 
 | | 기존 MCP 스캐너(Snyk Agent Scan, guardmcp, mcp-audit 등) | ai-tool-audit |
 |---|---|---|
@@ -113,7 +115,7 @@ AI 코딩 도구는 개발자 권한으로 파일을 읽고 명령을 실행합�
 | 버전 | 설치된 Claude Code·Codex·Gemini CLI와 버전을 고정한 MCP 패키지를 **공개 보안 권고와 대조**(인터넷 연결 없이) |
 | 변경 감지 | 기준선 이후 새로 생기거나 바뀐 MCP 서버 |
 
-규칙은 72개이고, 규칙마다 왜 위험한지·고치는 법·근거 사건(날짜와 원문 링크)이 달려 있습니다. 전체 목록은 [docs/규칙목록.md](docs/규칙목록.md)에 있습니다.
+규칙은 72개이고, 규칙마다 왜 위험한지·고치는 법·근거 사건(날짜와 원문 링크)이 달려 있습니다. 전체 목록은 [docs/규칙목록.md](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/규칙목록.md)에 있습니다.
 
 ## 지키는 원칙
 
@@ -132,9 +134,9 @@ Python 3.11 이상이 필요합니다. 점검기 본체는 표준 라이브러�
 
 ```bash
 # uv
-uv tool install git+https://github.com/prag-ai/ai-tool-audit
+uv tool install ai-tool-audit
 # 또는 pipx
-pipx install git+https://github.com/prag-ai/ai-tool-audit
+pipx install ai-tool-audit
 ```
 
 ### 인터넷이 막힌 PC(망분리)에 설치하기
@@ -144,14 +146,14 @@ pipx install git+https://github.com/prag-ai/ai-tool-audit
 3. 대상 PC에서 인터넷 없이 설치합니다(대상 PC에 Python 3.11 이상 필요).
 
 ```bash
-python3 -m pip install --no-index ai_tool_audit-0.2.0-py3-none-any.whl
+python3 -m pip install --no-index ai_tool_audit-0.2.1-py3-none-any.whl
 ai-tool-audit scan --html report.html
 ```
 
 설치 없이 한 번만 돌려 보려면:
 
 ```bash
-uvx --from git+https://github.com/prag-ai/ai-tool-audit ai-tool-audit scan
+uvx ai-tool-audit scan
 ```
 
 ## 사용법
@@ -210,31 +212,31 @@ Cursor·Claude Desktop·VS Code처럼 설정 파일로 등록하는 도구는 �
 
 `scan --html report.html`로 만든 보고서입니다. 맨 앞에 심각도 비율과 "먼저 고칠 것" 다섯 가지가 나옵니다. 보고서 하나에 한국어와 영어가 함께 들어 있어, **브라우저 언어가 한국어면 한국어로, 그 밖에는 영어로** 열립니다. 오른쪽 위 버튼으로 바꿀 수 있습니다. 외부 글꼴·스크립트를 불러오지 않아 보고서를 열 때도 인터넷 요청이 생기지 않습니다.
 
-![HTML 보고서 요약](docs/images/report-summary-ko.png)
+![HTML 보고서 요약](https://raw.githubusercontent.com/prag-ai/ai-tool-audit/main/docs/images/report-summary-ko.png)
 
 ### HTML 보고서 — 파일별 발견 항목
 
 고치는 단위가 파일이므로 발견 항목을 **파일별로** 묶었습니다. 왼쪽 목록에서 파일을 고르면, 줄 번호·심각도·내용이 편집기처럼 줄마다 나오고, "왜 위험한가 · 고치는 법"을 펼치면 근거 사건과 공식 문서가 나옵니다. 여러 조건이 겹치면 심각도를 올리고 그 이유를 적습니다.
 
-![HTML 보고서 발견 항목](docs/images/report-findings-ko.png)
+![HTML 보고서 발견 항목](https://raw.githubusercontent.com/prag-ai/ai-tool-audit/main/docs/images/report-findings-ko.png)
 
 ### MCP 서버 변경 감지
 
 `baseline save`로 기준선을 저장해 두면, 그 뒤에 몰래 추가되거나 실행 명령이 바뀐 MCP 서버를 알려 줍니다. 아래는 악성 패키지가 설정에 서버를 하나 추가하고 기존 서버를 바꿔치기한 상황을 재현한 화면입니다.
 
-![baseline diff 실행 화면](docs/images/baseline-diff-ko.png)
+![baseline diff 실행 화면](https://raw.githubusercontent.com/prag-ai/ai-tool-audit/main/docs/images/baseline-diff-ko.png)
 
 ## 회사에 도입하는 순서
 
 1. **시범 점검.** 보안팀·개발팀 PC 몇 대에서 `files`로 읽는 파일을 확인하고 `scan --html`을 돌려 결과를 봅니다. 사내 백신·EDR이 막지 않는지도 이때 확인합니다(여러 설정 파일을 훑는 동작이라 오탐이 날 수 있습니다).
-2. **내부 절차 정리.** [도입할 때 참고할 것](docs/도입전_확인사항.md)을 보고 목적, 읽는 범위, 직원 안내, 결과 보관 기간을 정합니다.
+2. **내부 절차 정리.** [도입할 때 참고할 것](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/도입전_확인사항.md)을 보고 목적, 읽는 범위, 직원 안내, 결과 보관 기간을 정합니다.
 3. **배포와 수집.** MDM으로 배포해 `scan --json result.json`을 돌리고, 결과 파일을 보안팀만 접근하는 곳에 모읍니다. 처음 점검 때 `baseline save`도 함께 돌립니다.
 4. **조치.** "높음"부터 고칩니다. 설정에 남은 토큰은 지우는 것으로 끝내지 말고 **키를 다시 발급**합니다.
 5. **재점검.** 같은 방법으로 다시 돌려 건수가 줄었는지 확인하고, 이후 분기마다 반복합니다.
 
 ## 회사에서 쓸 때 알아 두면 좋은 것
 
-- 직원 PC를 점검하는 일이니 목적과 읽는 범위를 직원에게 미리 알려 두면 좋습니다. [도입할 때 참고할 것](docs/도입전_확인사항.md)에 정리해 두었습니다.
+- 직원 PC를 점검하는 일이니 목적과 읽는 범위를 직원에게 미리 알려 두면 좋습니다. [도입할 때 참고할 것](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/도입전_확인사항.md)에 정리해 두었습니다.
 - 여러 PC의 결과는 `--json`으로 모을 수 있습니다. 결과 파일에는 비밀값 대신 위치만 들어가지만, 그 위치 목록 자체가 회사의 약점 지도이므로 필요한 사람만 볼 수 있게 보관하세요.
 - 이 도구는 점검 도구이지 차단 도구가 아닙니다. 막는 일은 각 AI 도구의 관리 정책(managed settings)과 MDM·EDR이 맡습니다. `--enterprise`는 그 관리 정책이 걸려 있는지 확인합니다.
 
@@ -247,7 +249,7 @@ Cursor·Claude Desktop·VS Code처럼 설정 파일로 등록하는 도구는 �
 
 ## 기여
 
-새 AI 도구나 설정이 나오면 규칙을 보태 주세요. 규칙은 코드와 분리된 YAML 파일(`rules/*.yaml`)이고, 근거 사건은 `data/incidents.yaml`에 한 번만 적고 ID로 참조합니다. 방법은 [CONTRIBUTING.md](CONTRIBUTING.md)에 있습니다. 보안 문제는 [SECURITY.md](SECURITY.md)를 따라 알려 주세요.
+새 AI 도구나 설정이 나오면 규칙을 보태 주세요. 규칙은 코드와 분리된 YAML 파일(`rules/*.yaml`)이고, 근거 사건은 `data/incidents.yaml`에 한 번만 적고 ID로 참조합니다. 방법은 [CONTRIBUTING.md](https://github.com/prag-ai/ai-tool-audit/blob/main/CONTRIBUTING.md)에 있습니다. 보안 문제는 [SECURITY.md](https://github.com/prag-ai/ai-tool-audit/blob/main/SECURITY.md)를 따라 알려 주세요.
 
 ## 참고한 보도·자료
 
@@ -255,7 +257,7 @@ Cursor·Claude Desktop·VS Code처럼 설정 파일로 등록하는 도구는 �
 - AI 도구로 90여 곳 해킹 일당 검거: [파이낸셜뉴스(2026-10-26)](https://www.fnnews.com/news/202610261023090858) · 금융권 아르텍스: [CrowdStrike(2026-10-07)](https://www.crowdstrike.com/en-us/blog/unknown-threat-actor-uses-artex-to-target-south-korean-finance/)
 - 쿠팡 조사단 발표: [머니투데이(2026-02-10)](https://www.mt.co.kr/tech/2026/02/10/2026021013535454383), 유출 규모: [TechCrunch(2025-12-01)](https://techcrunch.com/2025/12/01/koreas-coupang-says-data-breach-exposed-nearly-34m-customers-personal-information/)
 - Nx: [GHSA-cxm3-wv7p-598c](https://github.com/nrwl/nx/security/advisories/GHSA-cxm3-wv7p-598c) · `@bitwarden/cli`: [JFrog(2026-04-23)](https://research.jfrog.com/post/bitwarden-cli-hijack/) · SANDWORM_MODE: [Endor Labs](https://endorlabs.com/learn/sandworm-mode-dissecting-a-multi-stage-npm-supply-chain-attack)
-- 도구별 취약점·설정 근거: [docs/규칙목록.md](docs/규칙목록.md), [docs/research](docs/research)
+- 도구별 취약점·설정 근거: [docs/규칙목록.md](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/규칙목록.md), [docs/research](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/research)
 
 ## 기업 도입·교육 문의
 
@@ -266,4 +268,4 @@ Cursor·Claude Desktop·VS Code처럼 설정 파일로 등록하는 도구는 �
 
 ## 라이선스
 
-[Apache-2.0](LICENSE). 함께 배포하는 보안 권고 데이터는 GitHub Advisory Database(CC-BY 4.0)에서 가져왔습니다. [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES)를 참고하세요.
+[Apache-2.0](https://github.com/prag-ai/ai-tool-audit/blob/main/LICENSE). 함께 배포하는 보안 권고 데이터는 GitHub Advisory Database(CC-BY 4.0)에서 가져왔습니다. [THIRD_PARTY_NOTICES](https://github.com/prag-ai/ai-tool-audit/blob/main/THIRD_PARTY_NOTICES)를 참고하세요.

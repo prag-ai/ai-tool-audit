@@ -15,9 +15,9 @@ It reads — and only reads — the configuration of Claude Code, OpenAI Codex C
 
 > Output is in English or Korean. The terminal follows your system language (`--lang en` to force English). The HTML report carries both languages and opens in **your browser's language**, with a switch in the top-right corner.
 
-[한국어](README.md) · [Rule list (Korean)](docs/규칙목록.md)
+[한국어](https://github.com/prag-ai/ai-tool-audit/blob/main/README.md) · [Rule list (Korean)](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/규칙목록.md)
 
-![ai-tool-audit scan](docs/images/scan-terminal-en.png)
+![ai-tool-audit scan](https://raw.githubusercontent.com/prag-ai/ai-tool-audit/main/docs/images/scan-terminal-en.png)
 
 *`ai-tool-audit scan` against a deliberately misconfigured test environment. All keys are fake.*
 
@@ -67,7 +67,7 @@ ai-tool-audit answers that question for one machine at a time, and explains ever
 
 ## How it differs
 
-We surveyed public open-source tools as of 2026-11-24 ([survey notes, Korean](docs/research/03_landscape_license_incidents.md)). Within that survey we found no tool that does all three of the following:
+We surveyed public open-source tools as of 2026-11-24 ([survey notes, Korean](https://github.com/prag-ai/ai-tool-audit/blob/main/docs/research/03_landscape_license_incidents.md)). Within that survey we found no tool that does all three of the following:
 
 | | Existing MCP scanners (Snyk Agent Scan, guardmcp, mcp-audit, …) | ai-tool-audit |
 |---|---|---|
@@ -105,9 +105,9 @@ These are enforced by tests: fake secrets must not appear in any output, the sca
 Python 3.11+. The scanner uses only the standard library.
 
 ```bash
-uv tool install git+https://github.com/prag-ai/ai-tool-audit
+uv tool install ai-tool-audit
 # or
-pipx install git+https://github.com/prag-ai/ai-tool-audit
+pipx install ai-tool-audit
 ```
 
 ### Offline / air-gapped install
@@ -117,7 +117,7 @@ pipx install git+https://github.com/prag-ai/ai-tool-audit
 3. Install without network access (Python 3.11+ required on the target):
 
 ```bash
-python3 -m pip install --no-index ai_tool_audit-0.2.0-py3-none-any.whl
+python3 -m pip install --no-index ai_tool_audit-0.2.1-py3-none-any.whl
 ai-tool-audit scan --html report.html
 ```
 
@@ -171,15 +171,15 @@ All screenshots come from a deliberately misconfigured **test environment** (fak
 
 **HTML report — summary.** Severity mix and the five things to fix first.
 
-![summary](docs/images/report-summary-en.png)
+![summary](https://raw.githubusercontent.com/prag-ai/ai-tool-audit/main/docs/images/report-summary-en.png)
 
 **HTML report — findings by file.** Fixes happen one file at a time, so findings are grouped by file, with line numbers like an editor gutter. Expand a finding to see why it matters, how to fix it, and the incident behind it.
 
-![findings](docs/images/report-findings-en.png)
+![findings](https://raw.githubusercontent.com/prag-ai/ai-tool-audit/main/docs/images/report-findings-en.png)
 
 MCP drift detection (`baseline diff`): a server silently added and another one swapped.
 
-![baseline diff](docs/images/baseline-diff-en.png)
+![baseline diff](https://raw.githubusercontent.com/prag-ai/ai-tool-audit/main/docs/images/baseline-diff-en.png)
 
 ## Limitations
 
@@ -204,4 +204,4 @@ We help companies audit developer machines at scale, set AI coding tool policies
 
 ## License
 
-[Apache-2.0](LICENSE). Bundled advisory data comes from the GitHub Advisory Database (CC-BY 4.0); see [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
+[Apache-2.0](https://github.com/prag-ai/ai-tool-audit/blob/main/LICENSE). Bundled advisory data comes from the GitHub Advisory Database (CC-BY 4.0); see [THIRD_PARTY_NOTICES](https://github.com/prag-ai/ai-tool-audit/blob/main/THIRD_PARTY_NOTICES).
