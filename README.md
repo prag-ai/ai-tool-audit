@@ -139,6 +139,13 @@ uv tool install ai-tool-audit
 pipx install ai-tool-audit
 ```
 
+| 받는 곳 | 주소 |
+|---|---|
+| PyPI | https://pypi.org/project/ai-tool-audit/ |
+| 공식 MCP Registry | `io.github.prag-ai/ai-tool-audit` |
+| Glama MCP 목록 | https://glama.ai/mcp/servers/prag-ai/ai-tool-audit |
+| 깃허브 릴리스(설치 파일·SHA-256) | https://github.com/prag-ai/ai-tool-audit/releases |
+
 ### 인터넷이 막힌 PC(망분리)에 설치하기
 
 1. 인터넷이 되는 PC에서 [릴리스](https://github.com/prag-ai/ai-tool-audit/releases) 페이지의 `ai_tool_audit-<버전>-py3-none-any.whl`을 받습니다. 같은 페이지의 SHA-256 값과 맞는지 확인합니다.

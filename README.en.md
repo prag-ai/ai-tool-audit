@@ -110,6 +110,13 @@ uv tool install ai-tool-audit
 pipx install ai-tool-audit
 ```
 
+| Where | Link |
+|---|---|
+| PyPI | https://pypi.org/project/ai-tool-audit/ |
+| Official MCP Registry | `io.github.prag-ai/ai-tool-audit` |
+| Glama | https://glama.ai/mcp/servers/prag-ai/ai-tool-audit |
+| GitHub Releases (wheel, SHA-256) | https://github.com/prag-ai/ai-tool-audit/releases |
+
 ### Offline / air-gapped install
 
 1. On a connected machine, download `ai_tool_audit-<version>-py3-none-any.whl` from [Releases](https://github.com/prag-ai/ai-tool-audit/releases) and check its SHA-256 against the release notes.
