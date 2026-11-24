@@ -1,0 +1,152 @@
+# OpenAI Codex CLI 규칙. 근거: docs/research/01 3절, 03 4절.
+rules:
+  - id: CX-PERM-001
+    tool: codex
+    title: 샌드박스 없이 전체 권한으로 실행(danger-full-access)
+    severity: 높음
+    docs: {kind: [config]}
+    detect:
+      type: equals
+      pointers: [/sandbox_mode, /profiles/*/sandbox_mode, /default_permissions, /profiles/*/default_permissions]
+      values: [danger-full-access, ":danger-full-access"]
+    why: 모델이 실행하는 명령이 운영체제 격리 없이 PC 전체에 접근한다.
+    fix: sandbox_mode를 workspace-write 또는 read-only로 둔다.
+    refs: [https://learn.chatgpt.com/docs/config-file/config-reference]
+
+  - id: CX-PERM-002
+    tool: codex
+    title: 승인을 전혀 묻지 않음(approval_policy = never)
+    severity: 높음
+    detect: {type: check, name: cx_approval_never}
+    why: 승인창이 뜨지 않아 모델이 정한 명령이 바로 실행된다. 샌드박스가 읽기 전용이 아니면 파일 변경과 실행까지 묻지 않는다.
+    fix: approval_policy를 on-request로 둔다.
+    refs: [https://learn.chatgpt.com/docs/agent-approvals-security]
+
+  - id: CX-PERM-003
+    tool: codex
+    title: 셸 시작 파일·별칭에 승인과 샌드박스를 끄는 플래그
+    severity: 높음
+    detect: {type: shell_regex, regex: '\bcodex\b[^#\n]*(--yolo\b|--dangerously-bypass-approvals-and-sandbox|(-s|--sandbox)[ =]+danger-full-access|(-a|--ask-for-approval)[ =]+never)'}
+    why: 별칭에 박혀 있으면 Codex가 매번 승인 없이, 격리 없이 실행된다.
+    fix: 별칭·스크립트에서 플래그를 지운다.
+    incidents: [nx-s1ngularity-2025]
+    refs: [https://learn.chatgpt.com/docs/cli/reference]
+
+  - id: CX-PERM-004
+    tool: codex
+    title: 샌드박스 안에서 네트워크 허용
+    severity: 중간
+    docs: {kind: [config]}
+    detect: {type: equals, pointers: [/sandbox_workspace_write/network_access, /profiles/*/sandbox_workspace_write/network_access], values: [true]}
+    why: 프롬프트 인젝션으로 실행된 명령이 외부로 데이터를 보낼 수 있다. 공식 문서도 위험 상승으로 표시한다.
+    fix: network_access를 끄고, 필요한 작업만 승인을 받아 실행한다.
+    refs: [https://learn.chatgpt.com/docs/agent-approvals-security]
+
+  - id: CX-PERM-005
+    tool: codex
+    title: 폐지되거나 폐기 예정인 승인 정책 값
+    severity: 낮음
+    docs: {kind: [config]}
+    detect: {type: equals, pointers: [/approval_policy, /profiles/*/approval_policy], values: [untrusted, on-failure]}
+    why: untrusted는 폐지됐고 on-failure는 폐기 예정이다. 의도와 다르게 동작하거나 실행이 안 될 수 있다.
+    fix: on-request로 바꾼다.
+    refs: [https://learn.chatgpt.com/docs/config-file/config-reference]
+
+  - id: CX-PERM-007
+    tool: codex
+    title: 전체 권한 경고를 숨김
+    severity: 낮음
+    docs: {kind: [config]}
+    detect: {type: equals, pointer: /notice/hide_full_access_warning, values: [true]}
+    why: 전체 권한으로 실행 중이라는 경고를 끈 흔적이다.
+    fix: 이 값을 지운다.
+    refs: [https://learn.chatgpt.com/docs/config-file/config-reference]
+
+  - id: CX-MCP-001
+    tool: codex
+    title: MCP 도구 승인 방식이 prompt(매번 묻기)가 아님
+    severity: 중간
+    status: 검토필요
+    detect: {type: check, name: cx_mcp_approval_mode}
+    why: 공식 문서는 writes 외 값의 정확한 의미를 설명하지 않는다. 묻지 않고 실행되는 도구가 있을 수 있어 확인이 필요하다.
+    fix: 쓰기·외부 전송을 하는 도구는 prompt로 둔다.
+    refs: [https://learn.chatgpt.com/docs/extend/mcp]
+
+  - id: CX-HOOK-001
+    tool: codex
+    title: 셸 시작 파일·별칭에 훅 신뢰 검사를 건너뛰는 플래그
+    severity: 높음
+    detect: {type: shell_regex, regex: '\bcodex\b[^#\n]*--dangerously-bypass-hook-trust'}
+    why: 사용자가 검토하지 않은 훅이 그대로 실행된다.
+    fix: 플래그를 지우고 /hooks에서 훅을 검토한다.
+    refs: [https://learn.chatgpt.com/docs/hooks]
+
+  - id: CX-HOOK-002
+    tool: codex
+    title: 신뢰한 프로젝트에 훅이 있음
+    severity: 중간
+    detect: {type: check, name: cx_project_hooks_trusted}
+    why: 신뢰(trusted)로 표시한 저장소의 .codex/ 훅은 그 저장소에서 Codex를 쓸 때 실행된다.
+    fix: 훅 명령을 검토하고, 모르는 저장소는 trust_level을 untrusted로 둔다.
+    incidents: [codex-cve-2025-61260]
+    refs: [https://learn.chatgpt.com/docs/hooks]
+
+  - id: CX-HOOK-003
+    tool: codex
+    title: 알림 명령(notify)이 설정됨
+    severity: 정보
+    docs: {kind: [config]}
+    detect: {type: present, pointer: /notify}
+    why: 훅 말고도 Codex가 이벤트마다 실행하는 명령이다. 목록 확인용.
+    fix: 명령이 무엇인지 확인한다.
+    refs: [https://learn.chatgpt.com/docs/config-file/config-reference]
+
+  - id: CX-SEC-001
+    tool: codex
+    title: 로그인 토큰 파일(auth.json) 권한이 넓음
+    severity: 높음
+    os: [macos, linux]
+    detect: {type: file_mode, paths: ['{codex_home}/auth.json']}
+    why: 공식 문서는 auth.json을 비밀번호처럼 다루라고 한다. 권한이 넓으면 다른 계정이 토큰을 읽는다.
+    fix: chmod 600 으로 권한을 줄이거나 cli_auth_credentials_store = "keyring"으로 OS 자격 증명 저장소를 쓴다.
+    refs: [https://learn.chatgpt.com/docs/auth]
+
+  - id: CX-SEC-002
+    tool: codex
+    title: 자격 증명을 평문 파일에 저장하도록 설정
+    severity: 중간
+    docs: {kind: [config]}
+    detect: {type: equals, pointers: [/cli_auth_credentials_store, /mcp_oauth_credentials_store], values: [file]}
+    why: 키체인 같은 OS 저장소 대신 평문 파일에 토큰이 남는다.
+    fix: keyring 또는 auto로 바꾼다.
+    refs: [https://learn.chatgpt.com/docs/auth]
+
+  - id: CX-SEC-003
+    tool: codex
+    title: 설정 파일에 모델 제공자 토큰을 직접 적음(experimental_bearer_token)
+    severity: 높음
+    docs: {kind: [config]}
+    detect: {type: present, pointer: /model_providers/*/experimental_bearer_token}
+    why: 공식 문서도 권장하지 않는 방식이다. 설정 파일에 토큰이 평문으로 남는다.
+    fix: env_key로 환경 변수 이름을 지정한다.
+    refs: [https://learn.chatgpt.com/docs/config-file/config-reference]
+
+  - id: CX-SEC-004
+    tool: codex
+    title: 셸 환경 변수가 모델이 실행하는 명령에 그대로 넘어갈 수 있음
+    severity: 중간
+    status: 검토필요
+    detect: {type: check, name: cx_shell_env}
+    why: 조사한 공식 문서 기준으로 shell_environment_policy 기본값에서는 이름에 KEY·SECRET·TOKEN이 든 변수도 명령에 넘어간다. 기본값 해석이 버전마다 다를 수 있어 확인이 필요하다.
+    fix: "[shell_environment_policy]에 inherit = \"core\" 또는 exclude 규칙을 둔다."
+    refs: [https://learn.chatgpt.com/docs/config-file/config-reference]
+
+  - id: CX-MGMT-001
+    tool: codex
+    title: 기업 강제 요건(requirements.toml)이 없음
+    severity: 중간
+    enterprise: true
+    detect: {type: check, name: cx_requirements_missing}
+    why: 허용할 승인 정책·샌드박스·MCP 서버를 회사가 강제하지 못한다.
+    fix: requirements.toml(또는 MDM requirements_toml_base64)으로 allowed_approval_policies, allowed_sandbox_modes, mcp_servers를 정한다.
+    refs: [https://learn.chatgpt.com/docs/enterprise/managed-configuration]

@@ -1,0 +1,1857 @@
+{
+ "rules": [
+  {
+   "id": "CC-PERM-001",
+   "tool": "claude-code",
+   "title": "모든 작업을 묻지 않고 실행하는 권한 모드(bypassPermissions)",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "settings"
+    ],
+    "layer": [
+     "user",
+     "managed"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/permissions/defaultMode",
+    "values": [
+     "bypassPermissions"
+    ]
+   },
+   "why": "이 모드에서는 Claude Code가 셸 명령·파일 쓰기·.git과 .claude 같은 보호 경로 쓰기까지 묻지 않고 실행한다. 공식 문서는 컨테이너·VM 같은 격리 환경에서만 쓰라고 경고한다.",
+   "fix": "defaultMode를 default로 되돌리고, 필요하면 격리된 컨테이너 안에서만 이 모드를 쓴다. 기업 PC는 관리 설정에 permissions.disableBypassPermissionsMode = \"disable\"을 둔다.",
+   "refs": [
+    "https://code.claude.com/docs/en/permissions"
+   ],
+   "status": "확정",
+   "title_en": "Permission mode that runs everything without asking (bypassPermissions)",
+   "why_en": "In this mode Claude Code runs shell commands and writes files — even to protected paths such as .git and .claude — without asking. The official docs say to use it only in isolated environments such as containers or VMs.",
+   "fix_en": "Set defaultMode back to default and use this mode only inside an isolated container. On corporate machines, set permissions.disableBypassPermissionsMode = \"disable\" in managed settings.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-PERM-002",
+   "tool": "claude-code",
+   "title": "저장소 설정에 bypassPermissions가 들어 있음",
+   "severity": "높음",
+   "detect": {
+    "type": "check",
+    "name": "cc_project_bypass"
+   },
+   "why": "저장소를 받은 사람의 PC에서 권한 확인이 꺼질 수 있다. 버전에 따라 효력이 다르며, 옛 버전은 신뢰 대화상자까지 생략했다.",
+   "fix": "저장소의 .claude/settings.json·settings.local.json에서 이 값을 지우고 Claude Code를 최신으로 올린다.",
+   "incidents": [
+    "cve-2026-33068"
+   ],
+   "refs": [
+    "https://code.claude.com/docs/en/settings-reference"
+   ],
+   "status": "확정",
+   "title_en": "Repository settings contain bypassPermissions",
+   "why_en": "Permission checks can be switched off on the machine of whoever clones the repository. The effect depends on the version; older versions also skipped the trust dialog.",
+   "fix_en": "Remove the value from the repository's .claude/settings.json and settings.local.json, and update Claude Code.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-PERM-003",
+   "tool": "claude-code",
+   "title": "우회 모드 확인창을 건너뛰도록 설정됨(우회 모드를 쓴 흔적)",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "settings"
+    ],
+    "layer": [
+     "user"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/skipDangerousModePermissionPrompt",
+    "values": [
+     true
+    ]
+   },
+   "why": "사용자가 권한 우회 모드의 경고를 수락하면 Claude Code가 이 값을 써 넣는다. 이 PC에서 우회 모드가 실제로 쓰였다는 뜻이다.",
+   "fix": "우회 모드를 어디서 왜 썼는지 확인하고, 필요 없으면 이 값을 지운다.",
+   "refs": [
+    "https://code.claude.com/docs/en/settings-reference"
+   ],
+   "status": "확정",
+   "title_en": "Bypass-mode confirmation is skipped (bypass mode has been used)",
+   "why_en": "Claude Code writes this value when a user accepts the bypass-mode warning, so bypass mode has actually been used on this machine.",
+   "fix_en": "Find out where and why bypass mode was used, and remove the value if it is not needed.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-PERM-004",
+   "tool": "claude-code",
+   "title": "셸 시작 파일·별칭에 권한 확인을 끄는 플래그",
+   "severity": "높음",
+   "detect": {
+    "type": "shell_regex",
+    "regex": "\\bclaude\\b[^#\\n]*(--dangerously-skip-permissions|--permission-mode[ =]+bypassPermissions)"
+   },
+   "why": "별칭이나 스크립트에 박혀 있으면 Claude Code가 매번 권한 확인 없이 실행된다. Nx 공급망 공격은 바로 이 플래그로 설치된 AI CLI를 실행해 비밀값을 뒤졌다.",
+   "fix": "별칭·스크립트에서 플래그를 지운다. 자동화가 필요하면 허용할 명령만 permissions.allow에 적는다.",
+   "incidents": [
+    "nx-s1ngularity-2025"
+   ],
+   "refs": [
+    "https://code.claude.com/docs/en/settings-reference"
+   ],
+   "status": "확정",
+   "title_en": "Shell startup file or alias disables permission checks",
+   "why_en": "An alias or script with this flag runs Claude Code without permission checks every time. The Nx supply-chain attack used exactly this flag to run installed AI CLIs and hunt for secrets.",
+   "fix_en": "Remove the flag from aliases and scripts. For automation, list only the allowed commands in permissions.allow.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-PERM-005",
+   "tool": "claude-code",
+   "title": "모든 셸 명령을 묻지 않고 실행하도록 허용(Bash 전체)",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "list_match",
+    "pointer": "/permissions/allow",
+    "equals": [
+     "Bash"
+    ],
+    "regex": [
+     "Bash\\(\\s*\\*\\s*\\)"
+    ]
+   },
+   "why": "허용 목록에 Bash 전체가 있으면 AI가 만든 셸 명령이 확인 없이 실행된다. 프롬프트 인젝션된 명령도 그대로 돈다.",
+   "fix": "Bash 전체 대신 필요한 명령만 Bash(npm test)처럼 적는다.",
+   "incidents": [
+    "nx-s1ngularity-2025"
+   ],
+   "refs": [
+    "https://code.claude.com/docs/en/permissions"
+   ],
+   "status": "확정",
+   "title_en": "Every shell command is allowed without asking (Bash wildcard)",
+   "why_en": "With Bash fully allowed, any shell command the AI produces runs without confirmation — including commands injected through prompt injection.",
+   "fix_en": "Replace the wildcard with specific commands such as Bash(npm test).",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-PERM-006",
+   "tool": "claude-code",
+   "title": "모든 웹 주소 또는 MCP 서버의 모든 도구를 허용",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "list_match",
+    "pointer": "/permissions/allow",
+    "equals": [
+     "WebFetch"
+    ],
+    "regex": [
+     "WebFetch\\(domain:\\*\\)",
+     "mcp__[A-Za-z0-9-]+(__\\*)?"
+    ]
+   },
+   "why": "WebFetch 전체 허용은 어느 사이트든 묻지 않고 읽게 해 프롬프트 인젝션 통로가 된다. 서버 단위 MCP 허용은 그 서버의 쓰기 도구까지 묻지 않게 만든다.",
+   "fix": "필요한 도메인(WebFetch(domain:docs.example.com))과 도구(mcp__서버__도구)만 적는다.",
+   "refs": [
+    "https://code.claude.com/docs/en/permissions"
+   ],
+   "status": "확정",
+   "title_en": "All URLs or all tools of an MCP server are allowed",
+   "why_en": "Allowing WebFetch for every site lets the agent read anything without asking, which opens a prompt-injection channel. Allowing a whole MCP server also auto-approves its write tools.",
+   "fix_en": "List only the needed domains (WebFetch(domain:docs.example.com)) and tools (mcp__server__tool).",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-MCP-001",
+   "tool": "claude-code",
+   "title": "저장소의 MCP 서버를 묻지 않고 모두 승인(enableAllProjectMcpServers)",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/enableAllProjectMcpServers",
+    "values": [
+     true
+    ]
+   },
+   "why": "저장소의 .mcp.json에 서버가 추가되면 확인 없이 연결된다. MCP 서버는 사용자 PC에서 실행되는 프로그램이다.",
+   "fix": "이 값을 지우고, 쓸 서버만 enabledMcpjsonServers에 이름으로 적는다.",
+   "incidents": [
+    "checkpoint-claude-2026"
+   ],
+   "refs": [
+    "https://code.claude.com/docs/en/settings-reference"
+   ],
+   "status": "확정",
+   "title_en": "All repository MCP servers are approved without asking (enableAllProjectMcpServers)",
+   "why_en": "Any server added to the repository's .mcp.json connects without confirmation. An MCP server is a program that runs on the user's machine.",
+   "fix_en": "Remove this value and list only the servers you use in enabledMcpjsonServers.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-HOOK-001",
+   "tool": "claude-code",
+   "title": "저장소 설정에 훅(자동 실행 명령)이 있음",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "settings"
+    ],
+    "layer": [
+     "project",
+     "local"
+    ]
+   },
+   "detect": {
+    "type": "present",
+    "pointer": "/hooks"
+   },
+   "why": "저장소의 훅은 저장소를 받은 사람 PC에서 세션 시작·도구 실행 때마다 셸 명령으로 실행된다.",
+   "fix": "훅의 명령을 읽어 보고, 모르는 명령이면 지운다. 기업 PC는 관리 설정에 allowManagedHooksOnly를 둔다.",
+   "incidents": [
+    "checkpoint-claude-2026"
+   ],
+   "refs": [
+    "https://code.claude.com/docs/en/hooks"
+   ],
+   "status": "확정",
+   "title_en": "Repository settings contain hooks (auto-run commands)",
+   "why_en": "Repository hooks run as shell commands on the machine of whoever clones the repository, at session start or on every tool call.",
+   "fix_en": "Read the hook commands and remove any you do not recognize. On corporate machines, set allowManagedHooksOnly in managed settings.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-HOOK-002",
+   "tool": "claude-code",
+   "title": "외부 주소로 보내는 http 훅에 주소 제한이 없음",
+   "severity": "높음",
+   "detect": {
+    "type": "check",
+    "name": "cc_http_hook"
+   },
+   "why": "http 훅은 도구 입력·출력이 담긴 이벤트 JSON을 지정한 주소로 보낸다. allowedHttpHookUrls가 없으면 어느 주소로든 보낼 수 있다.",
+   "fix": "훅 주소를 확인하고 allowedHttpHookUrls에 허용 주소만 적는다.",
+   "refs": [
+    "https://code.claude.com/docs/en/hooks"
+   ],
+   "status": "확정",
+   "title_en": "HTTP hook sends data out with no URL restriction",
+   "why_en": "An HTTP hook posts event JSON, including tool inputs and outputs, to the given URL. Without allowedHttpHookUrls it can send to any address.",
+   "fix_en": "Check the hook URL and list only permitted addresses in allowedHttpHookUrls.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-HOOK-003",
+   "tool": "claude-code",
+   "title": "저장소 설정에 자동으로 실행되는 명령 키(apiKeyHelper 등)",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "settings"
+    ],
+    "layer": [
+     "project",
+     "local"
+    ]
+   },
+   "detect": {
+    "type": "present",
+    "pointers": [
+     "/apiKeyHelper",
+     "/awsCredentialExport",
+     "/awsAuthRefresh",
+     "/otelHeadersHelper",
+     "/statusLine"
+    ]
+   },
+   "why": "이름은 훅이 아니지만 설정 파일에 적힌 셸 명령이 자동으로 실행된다.",
+   "fix": "명령 내용을 확인하고, 저장소가 아니라 사용자 설정에 두는 것을 검토한다.",
+   "refs": [
+    "https://code.claude.com/docs/en/settings-reference"
+   ],
+   "status": "확정",
+   "title_en": "Repository settings contain auto-run command keys (apiKeyHelper, etc.)",
+   "why_en": "These are not called hooks, but the shell commands in them still run automatically.",
+   "fix_en": "Review the commands and consider moving them from the repository to user settings.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-SEC-001",
+   "tool": "claude-code",
+   "title": "설정 파일 env 블록에 비밀값이 직접 적혀 있음",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "cc_env_secret"
+   },
+   "why": "설정 파일은 백업·동기화·악성 패키지의 파일 수집기 표적이다. 저장소 설정이면 키가 커밋된다.",
+   "fix": "값을 지우고 키체인이나 비밀 관리 도구, 셸 밖의 안전한 저장소에서 불러온다.",
+   "incidents": [
+    "bitwarden-cli-2026"
+   ],
+   "refs": [
+    "https://code.claude.com/docs/en/settings-reference"
+   ],
+   "status": "확정",
+   "title_en": "Secret written directly in a settings env block",
+   "why_en": "Settings files are targets for backups, sync and malicious packages' file collectors. In repository settings, the key gets committed.",
+   "fix_en": "Remove the value and load it from the keychain, a secrets manager or another safe store.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-SEC-003",
+   "tool": "claude-code",
+   "title": "로그인 자격 증명 파일 권한이 넓음",
+   "severity": "높음",
+   "os": [
+    "macos",
+    "linux"
+   ],
+   "detect": {
+    "type": "file_mode",
+    "paths": [
+     "{claude_dir}/.credentials.json"
+    ]
+   },
+   "why": "권한이 600보다 넓으면 같은 PC의 다른 계정이나 프로세스가 로그인 토큰을 읽을 수 있다.",
+   "fix": "chmod 600 으로 권한을 줄인다.",
+   "refs": [
+    "https://code.claude.com/docs/en/authentication"
+   ],
+   "status": "확정",
+   "title_en": "Login credential file permissions are too broad",
+   "why_en": "With permissions wider than 600, other accounts or processes on the same machine can read the login token.",
+   "fix_en": "Restrict it with chmod 600.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-SEC-004",
+   "tool": "claude-code",
+   "title": "macOS에서 자격 증명이 키체인 대신 파일에 저장됨",
+   "severity": "낮음",
+   "os": [
+    "macos"
+   ],
+   "detect": {
+    "type": "file_exists",
+    "paths": [
+     "{claude_dir}/.credentials.json"
+    ]
+   },
+   "why": "macOS는 원래 키체인에 저장한다. 이 파일이 있으면 키체인 쓰기가 실패해 평문 파일로 대체된 것이다.",
+   "fix": "파일 권한을 확인하고, 다시 로그인해 키체인에 저장되는지 본다.",
+   "refs": [
+    "https://code.claude.com/docs/en/authentication"
+   ],
+   "status": "확정",
+   "title_en": "On macOS, credentials are stored in a file instead of the Keychain",
+   "why_en": "macOS normally uses the Keychain. This file means the Keychain write failed and a plaintext file was used instead.",
+   "fix_en": "Check the file permissions and log in again to see whether the Keychain is used.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-SEC-006",
+   "tool": "claude-code",
+   "title": "저장소 설정이 API 주소(ANTHROPIC_BASE_URL)를 바꿈",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "settings"
+    ],
+    "layer": [
+     "project",
+     "local"
+    ]
+   },
+   "detect": {
+    "type": "present",
+    "pointer": "/env/ANTHROPIC_BASE_URL"
+   },
+   "why": "저장소 설정으로 API 요청을 다른 서버로 돌리면 API 키와 대화 내용이 그 서버로 간다. Check Point가 이 방법으로 키 유출을 보였다(2.0.65에서 수정).",
+   "fix": "저장소 설정에서 ANTHROPIC_BASE_URL을 지운다. 사내 게이트웨이가 필요하면 관리 설정으로 둔다.",
+   "incidents": [
+    "checkpoint-claude-2026"
+   ],
+   "refs": [
+    "https://github.com/advisories/GHSA-jh7p-qr78-84p7"
+   ],
+   "status": "확정",
+   "title_en": "Repository settings change the API endpoint (ANTHROPIC_BASE_URL)",
+   "why_en": "Redirecting API requests through repository settings sends the API key and conversations to that server. Check Point demonstrated key theft this way (fixed in 2.0.65).",
+   "fix_en": "Remove ANTHROPIC_BASE_URL from repository settings. If you need a corporate gateway, set it in managed settings.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CC-MGMT-002",
+   "tool": "claude-code",
+   "title": "기업 관리 설정에 핵심 잠금 키가 없음",
+   "severity": "중간",
+   "enterprise": true,
+   "detect": {
+    "type": "check",
+    "name": "cc_managed_missing"
+   },
+   "why": "관리 설정이 없거나 잠금 키가 빠지면 사용자 설정과 저장소 설정이 회사 정책을 넘어선다.",
+   "fix": "managed-settings.json에 permissions.disableBypassPermissionsMode, allowManagedHooksOnly, allowManagedMcpServersOnly를 둔다.",
+   "refs": [
+    "https://code.claude.com/docs/en/managed-settings"
+   ],
+   "status": "확정",
+   "title_en": "Managed settings lack the key lock-down options",
+   "why_en": "Without managed settings or lock-down keys, user and repository settings override company policy.",
+   "fix_en": "Set permissions.disableBypassPermissionsMode, allowManagedHooksOnly and allowManagedMcpServersOnly in managed-settings.json.",
+   "source": "claude_code.yaml"
+  },
+  {
+   "id": "CD-MGMT-001",
+   "tool": "claude-desktop",
+   "title": "Claude Desktop 기업 정책이 없거나 확장으로 로컬 MCP를 열 수 있음",
+   "severity": "중간",
+   "status": "검토필요",
+   "enterprise": true,
+   "detect": {
+    "type": "check",
+    "name": "cd_policy_missing"
+   },
+   "why": "정책이 없으면 로컬 MCP·데스크톱 확장·Claude Code가 모두 켜진 기본값이다. 로컬 MCP만 꺼도 데스크톱 확장으로 로컬 서버를 실행할 수 있다. 정책 파일 경로는 제3자 배포 문서 기준이라 확인이 필요하다.",
+   "fix": "관리 프로파일(macOS)·레지스트리(Windows)로 isLocalDevMcpEnabled와 isDesktopExtensionEnabled를 함께 정한다.",
+   "refs": [
+    "https://support.claude.com/en/articles/12622667-enterprise-configuration-for-claude-desktop"
+   ],
+   "title_en": "No Claude Desktop enterprise policy, or extensions can still open local MCP",
+   "why_en": "Without a policy, local MCP, desktop extensions and Claude Code are all on by default. Turning off local MCP alone still lets desktop extensions run local servers. The policy file paths come from third-party deployment docs and need confirmation.",
+   "fix_en": "Set isLocalDevMcpEnabled and isDesktopExtensionEnabled together via a managed profile (macOS) or the registry (Windows).",
+   "source": "claude_desktop.yaml"
+  },
+  {
+   "id": "CX-PERM-001",
+   "tool": "codex",
+   "title": "샌드박스 없이 전체 권한으로 실행(danger-full-access)",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "config"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointers": [
+     "/sandbox_mode",
+     "/profiles/*/sandbox_mode",
+     "/default_permissions",
+     "/profiles/*/default_permissions"
+    ],
+    "values": [
+     "danger-full-access",
+     ":danger-full-access"
+    ]
+   },
+   "why": "모델이 실행하는 명령이 운영체제 격리 없이 PC 전체에 접근한다.",
+   "fix": "sandbox_mode를 workspace-write 또는 read-only로 둔다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/config-file/config-reference"
+   ],
+   "status": "확정",
+   "title_en": "Runs with full access and no sandbox (danger-full-access)",
+   "why_en": "Commands the model runs reach the whole machine without OS-level isolation.",
+   "fix_en": "Set sandbox_mode to workspace-write or read-only.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-PERM-002",
+   "tool": "codex",
+   "title": "승인을 전혀 묻지 않음(approval_policy = never)",
+   "severity": "높음",
+   "detect": {
+    "type": "check",
+    "name": "cx_approval_never"
+   },
+   "why": "승인창이 뜨지 않아 모델이 정한 명령이 바로 실행된다. 샌드박스가 읽기 전용이 아니면 파일 변경과 실행까지 묻지 않는다.",
+   "fix": "approval_policy를 on-request로 둔다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/agent-approvals-security"
+   ],
+   "status": "확정",
+   "title_en": "Never asks for approval (approval_policy = never)",
+   "why_en": "No approval prompt appears, so commands chosen by the model run immediately. Unless the sandbox is read-only, file changes and execution are not confirmed either.",
+   "fix_en": "Set approval_policy to on-request.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-PERM-003",
+   "tool": "codex",
+   "title": "셸 시작 파일·별칭에 승인과 샌드박스를 끄는 플래그",
+   "severity": "높음",
+   "detect": {
+    "type": "shell_regex",
+    "regex": "\\bcodex\\b[^#\\n]*(--yolo\\b|--dangerously-bypass-approvals-and-sandbox|(-s|--sandbox)[ =]+danger-full-access|(-a|--ask-for-approval)[ =]+never)"
+   },
+   "why": "별칭에 박혀 있으면 Codex가 매번 승인 없이, 격리 없이 실행된다.",
+   "fix": "별칭·스크립트에서 플래그를 지운다.",
+   "incidents": [
+    "nx-s1ngularity-2025"
+   ],
+   "refs": [
+    "https://learn.chatgpt.com/docs/cli/reference"
+   ],
+   "status": "확정",
+   "title_en": "Shell startup file or alias disables approvals and the sandbox",
+   "why_en": "With this in an alias, Codex runs every time without approvals or isolation.",
+   "fix_en": "Remove the flag from aliases and scripts.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-PERM-004",
+   "tool": "codex",
+   "title": "샌드박스 안에서 네트워크 허용",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "config"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointers": [
+     "/sandbox_workspace_write/network_access",
+     "/profiles/*/sandbox_workspace_write/network_access"
+    ],
+    "values": [
+     true
+    ]
+   },
+   "why": "프롬프트 인젝션으로 실행된 명령이 외부로 데이터를 보낼 수 있다. 공식 문서도 위험 상승으로 표시한다.",
+   "fix": "network_access를 끄고, 필요한 작업만 승인을 받아 실행한다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/agent-approvals-security"
+   ],
+   "status": "확정",
+   "title_en": "Network allowed inside the sandbox",
+   "why_en": "Commands run through prompt injection can send data out. The official docs also mark this as elevated risk.",
+   "fix_en": "Turn off network_access and approve network tasks individually.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-PERM-005",
+   "tool": "codex",
+   "title": "폐지되거나 폐기 예정인 승인 정책 값",
+   "severity": "낮음",
+   "docs": {
+    "kind": [
+     "config"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointers": [
+     "/approval_policy",
+     "/profiles/*/approval_policy"
+    ],
+    "values": [
+     "untrusted",
+     "on-failure"
+    ]
+   },
+   "why": "untrusted는 폐지됐고 on-failure는 폐기 예정이다. 의도와 다르게 동작하거나 실행이 안 될 수 있다.",
+   "fix": "on-request로 바꾼다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/config-file/config-reference"
+   ],
+   "status": "확정",
+   "title_en": "Removed or deprecated approval policy value",
+   "why_en": "untrusted has been removed and on-failure is deprecated. Behavior may differ from what you expect, or Codex may fail to start.",
+   "fix_en": "Change it to on-request.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-PERM-007",
+   "tool": "codex",
+   "title": "전체 권한 경고를 숨김",
+   "severity": "낮음",
+   "docs": {
+    "kind": [
+     "config"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/notice/hide_full_access_warning",
+    "values": [
+     true
+    ]
+   },
+   "why": "전체 권한으로 실행 중이라는 경고를 끈 흔적이다.",
+   "fix": "이 값을 지운다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/config-file/config-reference"
+   ],
+   "status": "확정",
+   "title_en": "Full-access warning is hidden",
+   "why_en": "Someone turned off the warning that Codex is running with full access.",
+   "fix_en": "Remove this value.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-MCP-001",
+   "tool": "codex",
+   "title": "MCP 도구 승인 방식이 prompt(매번 묻기)가 아님",
+   "severity": "중간",
+   "status": "검토필요",
+   "detect": {
+    "type": "check",
+    "name": "cx_mcp_approval_mode"
+   },
+   "why": "공식 문서는 writes 외 값의 정확한 의미를 설명하지 않는다. 묻지 않고 실행되는 도구가 있을 수 있어 확인이 필요하다.",
+   "fix": "쓰기·외부 전송을 하는 도구는 prompt로 둔다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/extend/mcp"
+   ],
+   "title_en": "MCP tool approval mode is not prompt (ask every time)",
+   "why_en": "The official docs do not explain values other than writes, so some tools may run without asking. Needs review.",
+   "fix_en": "Use prompt for tools that write or send data out.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-HOOK-001",
+   "tool": "codex",
+   "title": "셸 시작 파일·별칭에 훅 신뢰 검사를 건너뛰는 플래그",
+   "severity": "높음",
+   "detect": {
+    "type": "shell_regex",
+    "regex": "\\bcodex\\b[^#\\n]*--dangerously-bypass-hook-trust"
+   },
+   "why": "사용자가 검토하지 않은 훅이 그대로 실행된다.",
+   "fix": "플래그를 지우고 /hooks에서 훅을 검토한다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/hooks"
+   ],
+   "status": "확정",
+   "title_en": "Shell startup file or alias skips hook trust checks",
+   "why_en": "Hooks the user never reviewed run as-is.",
+   "fix_en": "Remove the flag and review hooks with /hooks.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-HOOK-002",
+   "tool": "codex",
+   "title": "신뢰한 프로젝트에 훅이 있음",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "cx_project_hooks_trusted"
+   },
+   "why": "신뢰(trusted)로 표시한 저장소의 .codex/ 훅은 그 저장소에서 Codex를 쓸 때 실행된다.",
+   "fix": "훅 명령을 검토하고, 모르는 저장소는 trust_level을 untrusted로 둔다.",
+   "incidents": [
+    "codex-cve-2025-61260"
+   ],
+   "refs": [
+    "https://learn.chatgpt.com/docs/hooks"
+   ],
+   "status": "확정",
+   "title_en": "A trusted project contains hooks",
+   "why_en": "The .codex/ hooks of a repository marked trusted run whenever Codex is used in that repository.",
+   "fix_en": "Review the hook commands and set trust_level to untrusted for repositories you don't know.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-HOOK-003",
+   "tool": "codex",
+   "title": "알림 명령(notify)이 설정됨",
+   "severity": "정보",
+   "docs": {
+    "kind": [
+     "config"
+    ]
+   },
+   "detect": {
+    "type": "present",
+    "pointer": "/notify"
+   },
+   "why": "훅 말고도 Codex가 이벤트마다 실행하는 명령이다. 목록 확인용.",
+   "fix": "명령이 무엇인지 확인한다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/config-file/config-reference"
+   ],
+   "status": "확정",
+   "title_en": "Notification command (notify) is configured",
+   "why_en": "Besides hooks, Codex runs this command on every event. Listed for review.",
+   "fix_en": "Check what the command does.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-SEC-001",
+   "tool": "codex",
+   "title": "로그인 토큰 파일(auth.json) 권한이 넓음",
+   "severity": "높음",
+   "os": [
+    "macos",
+    "linux"
+   ],
+   "detect": {
+    "type": "file_mode",
+    "paths": [
+     "{codex_home}/auth.json"
+    ]
+   },
+   "why": "공식 문서는 auth.json을 비밀번호처럼 다루라고 한다. 권한이 넓으면 다른 계정이 토큰을 읽는다.",
+   "fix": "chmod 600 으로 권한을 줄이거나 cli_auth_credentials_store = \"keyring\"으로 OS 자격 증명 저장소를 쓴다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/auth"
+   ],
+   "status": "확정",
+   "title_en": "Login token file (auth.json) permissions are too broad",
+   "why_en": "The official docs say to treat auth.json like a password. With broad permissions, other accounts can read the token.",
+   "fix_en": "Restrict it with chmod 600, or set cli_auth_credentials_store = \"keyring\" to use the OS credential store.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-SEC-002",
+   "tool": "codex",
+   "title": "자격 증명을 평문 파일에 저장하도록 설정",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "config"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointers": [
+     "/cli_auth_credentials_store",
+     "/mcp_oauth_credentials_store"
+    ],
+    "values": [
+     "file"
+    ]
+   },
+   "why": "키체인 같은 OS 저장소 대신 평문 파일에 토큰이 남는다.",
+   "fix": "keyring 또는 auto로 바꾼다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/auth"
+   ],
+   "status": "확정",
+   "title_en": "Credentials are configured to be stored in a plaintext file",
+   "why_en": "Tokens stay in a plaintext file instead of an OS store such as the Keychain.",
+   "fix_en": "Change it to keyring or auto.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-SEC-003",
+   "tool": "codex",
+   "title": "설정 파일에 모델 제공자 토큰을 직접 적음(experimental_bearer_token)",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "config"
+    ]
+   },
+   "detect": {
+    "type": "present",
+    "pointer": "/model_providers/*/experimental_bearer_token"
+   },
+   "why": "공식 문서도 권장하지 않는 방식이다. 설정 파일에 토큰이 평문으로 남는다.",
+   "fix": "env_key로 환경 변수 이름을 지정한다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/config-file/config-reference"
+   ],
+   "status": "확정",
+   "title_en": "Model provider token written in the config file (experimental_bearer_token)",
+   "why_en": "The official docs discourage this. The token stays in the config file in plaintext.",
+   "fix_en": "Use env_key to name an environment variable instead.",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-SEC-004",
+   "tool": "codex",
+   "title": "셸 환경 변수가 모델이 실행하는 명령에 그대로 넘어갈 수 있음",
+   "severity": "중간",
+   "status": "검토필요",
+   "detect": {
+    "type": "check",
+    "name": "cx_shell_env"
+   },
+   "why": "조사한 공식 문서 기준으로 shell_environment_policy 기본값에서는 이름에 KEY·SECRET·TOKEN이 든 변수도 명령에 넘어간다. 기본값 해석이 버전마다 다를 수 있어 확인이 필요하다.",
+   "fix": "[shell_environment_policy]에 inherit = \"core\" 또는 exclude 규칙을 둔다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/config-file/config-reference"
+   ],
+   "title_en": "Shell environment variables may be passed to commands the model runs",
+   "why_en": "Per the official docs we reviewed, with shell_environment_policy defaults even variables named *KEY*, *SECRET* or *TOKEN* are passed to commands. How the default is interpreted may vary by version, so this needs review.",
+   "fix_en": "Set inherit = \"core\" or exclude rules under [shell_environment_policy].",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "CX-MGMT-001",
+   "tool": "codex",
+   "title": "기업 강제 요건(requirements.toml)이 없음",
+   "severity": "중간",
+   "enterprise": true,
+   "detect": {
+    "type": "check",
+    "name": "cx_requirements_missing"
+   },
+   "why": "허용할 승인 정책·샌드박스·MCP 서버를 회사가 강제하지 못한다.",
+   "fix": "requirements.toml(또는 MDM requirements_toml_base64)으로 allowed_approval_policies, allowed_sandbox_modes, mcp_servers를 정한다.",
+   "refs": [
+    "https://learn.chatgpt.com/docs/enterprise/managed-configuration"
+   ],
+   "status": "확정",
+   "title_en": "No enterprise requirements (requirements.toml)",
+   "why_en": "The company cannot enforce which approval policies, sandbox modes and MCP servers are allowed.",
+   "fix_en": "Define allowed_approval_policies, allowed_sandbox_modes and mcp_servers in requirements.toml (or MDM requirements_toml_base64).",
+   "source": "codex.yaml"
+  },
+  {
+   "id": "ALL-MCP-001",
+   "tool": "공통",
+   "title": "MCP 서버 설정에 비밀값이 직접 적혀 있음",
+   "severity": "높음",
+   "detect": {
+    "type": "check",
+    "name": "mcp_literal_secret"
+   },
+   "why": "MCP 설정 파일은 악성 패키지의 파일 수집기가 노리는 곳이다. env·headers 값은 ${VAR}처럼 환경 변수 참조로 두어야 한다.",
+   "fix": "값을 지우고 ${VAR} 참조로 바꾼 뒤, 키를 다시 발급한다(이미 노출된 것으로 본다).",
+   "incidents": [
+    "bitwarden-cli-2026"
+   ],
+   "status": "확정",
+   "title_en": "Secret written directly in an MCP server config",
+   "why_en": "MCP config files are a target for malicious packages' file collectors. env and headers values should be environment variable references such as ${VAR}.",
+   "fix_en": "Remove the value, switch to a ${VAR} reference, and reissue the key (treat it as already exposed).",
+   "source": "common.yaml"
+  },
+  {
+   "id": "ALL-MCP-002",
+   "tool": "공통",
+   "title": "버전을 고정하지 않고 실행하는 MCP 서버(npx·uvx 등)",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "mcp_unpinned"
+   },
+   "why": "실행할 때마다 최신 버전을 받는다. 정상 패키지가 악성 업데이트로 바뀌면 다음 실행부터 그대로 돈다.",
+   "fix": "패키지@1.2.3 처럼 검증한 버전을 고정한다.",
+   "incidents": [
+    "postmark-mcp-2025"
+   ],
+   "status": "확정",
+   "title_en": "MCP server runs without a pinned version (npx, uvx, …)",
+   "why_en": "The latest version is fetched on every run. If a legitimate package turns malicious in an update, it runs from the next start.",
+   "fix_en": "Pin a verified version, e.g. package@1.2.3.",
+   "source": "common.yaml"
+  },
+  {
+   "id": "ALL-MCP-004",
+   "tool": "공통",
+   "title": "암호화하지 않은 http 주소의 원격 MCP 서버",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "mcp_plain_http"
+   },
+   "why": "중간에서 응답을 바꿔 악성 도구 설명이나 인증 주소를 끼워 넣을 수 있다.",
+   "fix": "https 주소를 쓴다.",
+   "incidents": [
+    "mcp-remote-2025"
+   ],
+   "status": "확정",
+   "title_en": "Remote MCP server over unencrypted http",
+   "why_en": "Someone in the middle can alter responses and inject malicious tool descriptions or auth endpoints.",
+   "fix_en": "Use an https URL.",
+   "source": "common.yaml"
+  },
+  {
+   "id": "ALL-SEC-001",
+   "tool": "공통",
+   "title": "셸 시작 파일에 AI 서비스 API 키가 평문으로 있음",
+   "severity": "중간",
+   "detect": {
+    "type": "shell_regex",
+    "secret": true,
+    "regex": "^\\s*(?:export\\s+)?(?P<name>ANTHROPIC_API_KEY|ANTHROPIC_AUTH_TOKEN|CLAUDE_CODE_OAUTH_TOKEN|OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN|GEMINI_API_KEY|GOOGLE_API_KEY)\\s*=\\s*[\"']?(?P<value>[^\"'\\s$][^\"'\\s]{7,})"
+   },
+   "why": "셸 시작 파일은 모든 프로그램이 읽을 수 있고, 백업·동기화·악성 패키지의 수집 대상이다. AI 도구가 실행하는 명령에도 환경 변수로 넘어간다.",
+   "fix": "키를 OS 키체인이나 비밀 관리 도구에 두고 필요할 때만 불러온다. 이미 노출된 것으로 보고 키를 다시 발급한다.",
+   "incidents": [
+    "nx-s1ngularity-2025"
+   ],
+   "status": "확정",
+   "title_en": "AI service API key in plaintext in a shell startup file",
+   "why_en": "Shell startup files are readable by every program and are collected by backups, sync and malicious packages. The key is also passed as an environment variable to commands AI tools run.",
+   "fix_en": "Keep keys in the OS keychain or a secrets manager and load them only when needed. Treat the key as exposed and reissue it.",
+   "source": "common.yaml"
+  },
+  {
+   "id": "ALL-SEC-003",
+   "tool": "공통",
+   "title": "AI 도구 설정·셸 시작 파일에 알려진 형식의 토큰이 있음",
+   "severity": "높음",
+   "detect": {
+    "type": "check",
+    "name": "known_tokens"
+   },
+   "why": "GitHub·OpenAI·Anthropic·AWS 등 서비스별 형식과 일치하는 실제 토큰이 평문으로 있다. 악성 패키지의 파일 수집기가 노리는 파일이다.",
+   "fix": "키를 다시 발급하고(이미 노출된 것으로 본다), 설정에는 환경 변수 참조로 넣는다.",
+   "incidents": [
+    "bitwarden-cli-2026"
+   ],
+   "status": "확정",
+   "title_en": "Token in a known format found in AI tool config or shell startup files",
+   "why_en": "A real token matching a service's format (GitHub, OpenAI, Anthropic, AWS, …) is stored in plaintext in a file that malicious packages' collectors target.",
+   "fix_en": "Reissue the key (treat it as exposed) and reference it through an environment variable.",
+   "source": "common.yaml"
+  },
+  {
+   "id": "ALL-MCP-005",
+   "tool": "공통",
+   "title": "파일시스템 MCP 서버가 루트·홈 폴더 전체에 접근",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "mcp_broad_fs"
+   },
+   "why": "MCP 서버는 사용자 권한으로 돈다. 홈 전체를 넘기면 SSH 키·클라우드 자격 증명까지 AI가 읽을 수 있다.",
+   "fix": "작업에 필요한 폴더만 넘긴다.",
+   "status": "확정",
+   "title_en": "Filesystem MCP server can access the root or entire home directory",
+   "why_en": "MCP servers run with user privileges. Passing the whole home directory lets the AI read SSH keys and cloud credentials.",
+   "fix_en": "Pass only the folders the task needs.",
+   "source": "common.yaml"
+  },
+  {
+   "id": "ALL-MCP-006",
+   "tool": "공통",
+   "title": "저장소가 MCP 서버를 들고 옴",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "mcp_repo_servers"
+   },
+   "why": "저장소의 MCP 설정은 그 저장소를 연 사람 PC에서 실행되는 명령이다. 승인한 뒤 몰래 바꾸거나, 에이전트가 새로 만들게 한 취약점이 있었다.",
+   "fix": "서버 명령을 확인하고 버전을 고정한다. 모르는 저장소의 MCP 설정은 승인하지 않는다.",
+   "incidents": [
+    "cursor-mcpoison-2025",
+    "codex-cve-2025-61260"
+   ],
+   "status": "확정",
+   "title_en": "Repository ships an MCP server",
+   "why_en": "A repository's MCP config is a command that runs on the machine of whoever opens it. Vulnerabilities have let it be swapped after approval, or created by an agent.",
+   "fix_en": "Review the server command and pin its version. Do not approve MCP config from repositories you don't know.",
+   "source": "common.yaml"
+  },
+  {
+   "id": "ALL-VER-001",
+   "tool": "공통",
+   "title": "공개 보안 권고가 있는 버전을 쓰고 있음",
+   "severity": "높음",
+   "detect": {
+    "type": "check",
+    "name": "version_advisories"
+   },
+   "why": "설치된 AI 도구나 버전을 고정한 MCP 패키지가 GitHub 보안 권고의 영향 범위에 들어 있다. 고친 버전이 나와 있는데 올리지 않은 상태다. 심각도는 해당 권고 중 가장 높은 것을 따른다.",
+   "fix": "표시된 버전 이상으로 올린다. 같은 도구가 여러 벌 설치돼 있으면 쓰지 않는 설치는 지운다.",
+   "status": "확정",
+   "title_en": "Using a version with a published security advisory",
+   "why_en": "An installed AI tool or a pinned MCP package falls within the affected range of a GitHub security advisory, and a fixed version is available. Severity follows the highest matching advisory.",
+   "fix_en": "Upgrade to at least the version shown. If the tool is installed more than once, remove the copies you don't use.",
+   "source": "common.yaml"
+  },
+  {
+   "id": "ALL-BASE-001",
+   "tool": "공통",
+   "title": "기준선 이후 새로 생기거나 바뀐 MCP 서버",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "baseline_changes"
+   },
+   "why": "직접 등록하지 않은 MCP 서버가 설정에 생기거나 실행 명령이 바뀌었다면 악성 패키지가 설정을 고쳤을 수 있다. 실제로 npm 웜이 AI 도구 설정에 악성 MCP 서버를 몰래 추가한 사례가 있다.",
+   "fix": "본인이 바꾼 것인지 확인한다. 맞으면 ai-tool-audit baseline save로 기준선을 새로 저장한다.",
+   "incidents": [
+    "sandworm-mode-2026"
+   ],
+   "status": "확정",
+   "title_en": "MCP server added or changed since the baseline",
+   "why_en": "An MCP server you didn't register, or a changed command, may mean a malicious package edited the config. An npm worm has secretly added malicious MCP servers to AI tool configs.",
+   "fix_en": "Confirm whether you made the change. If so, save a new baseline with ai-tool-audit baseline save.",
+   "source": "common.yaml"
+  },
+  {
+   "id": "VSC-PERM-001",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "모든 AI 도구를 자동 승인(chat.tools.global.autoApprove)",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/chat.tools.global.autoApprove",
+    "values": [
+     true
+    ]
+   },
+   "why": "공식 문서 표현 그대로 핵심 보안 보호를 끈다. 파일 편집·명령 실행·외부 도구 호출을 묻지 않는다. 프롬프트 인젝션으로 이 값을 써 넣게 한 취약점도 있었다.",
+   "fix": "false로 둔다(기본값). 필요한 명령만 chat.tools.terminal.autoApprove에 좁게 적는다.",
+   "incidents": [
+    "copilot-cve-2025-53773"
+   ],
+   "refs": [
+    "https://code.visualstudio.com/docs/agents/run/approvals"
+   ],
+   "status": "확정",
+   "title_en": "All AI tools are auto-approved (chat.tools.global.autoApprove)",
+   "why_en": "In the docs' own words, this disables critical security protections. File edits, commands and external tool calls run without asking. A vulnerability once let prompt injection write this value.",
+   "fix_en": "Set it to false (the default). Allow only specific commands in chat.tools.terminal.autoApprove.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-PERM-002",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "터미널 자동 승인에 범용 실행기·전체 패턴·위험 명령이 들어 있음",
+   "severity": "높음",
+   "detect": {
+    "type": "check",
+    "name": "vsc_terminal_autoapprove"
+   },
+   "why": "bash·python·node 같은 실행기나 '/.*/' 패턴을 허용하면 사실상 모든 명령이 자동 실행된다. rm·curl 같은 기본 거부 명령을 허용으로 바꾼 것도 위험 신호다.",
+   "fix": "실행기·전체 패턴을 지우고 '/^npm run lint$/'처럼 정확한 명령만 둔다.",
+   "refs": [
+    "https://code.visualstudio.com/docs/agents/run/approvals"
+   ],
+   "status": "확정",
+   "title_en": "Terminal auto-approval includes a general runner, a catch-all pattern or a risky command",
+   "why_en": "Allowing runners such as bash, python or node, or a pattern like '/.*/', effectively auto-runs every command. Switching default-deny commands such as rm or curl to allow is also a warning sign.",
+   "fix_en": "Remove runners and catch-all patterns, and keep only exact commands such as '/^npm run lint$/'.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-PERM-004",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "터미널 기본 거부 규칙을 무시하도록 설정",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/chat.tools.terminal.ignoreDefaultAutoApproveRules",
+    "values": [
+     true
+    ]
+   },
+   "why": "rm·curl·eval 같은 기본 거부 목록이 빠진다.",
+   "fix": "false로 둔다.",
+   "refs": [
+    "https://code.visualstudio.com/docs/agents/run/approvals"
+   ],
+   "status": "확정",
+   "title_en": "Default terminal deny rules are ignored",
+   "why_en": "The default deny list (rm, curl, eval, …) no longer applies.",
+   "fix_en": "Set it to false.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-PERM-005",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "모든 파일 편집을 자동 승인",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "vsc_edits_broad"
+   },
+   "why": "**/* 같은 넓은 글롭을 허용하면 .vscode 설정·.env 편집도 묻지 않는다. 에이전트가 자기 설정을 고쳐 자동 승인을 켤 수 있다.",
+   "fix": "넓은 글롭을 지우고 필요한 폴더만 허용한다.",
+   "incidents": [
+    "copilot-cve-2025-53773"
+   ],
+   "refs": [
+    "https://code.visualstudio.com/docs/agents/reference/ai-settings"
+   ],
+   "status": "확정",
+   "title_en": "All file edits are auto-approved",
+   "why_en": "A broad glob such as **/* also auto-approves edits to .vscode settings and .env. The agent could edit its own settings to turn on auto-approval.",
+   "fix_en": "Remove the broad glob and allow only the needed folders.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-PERM-006",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "모든 URL을 자동 승인",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "vsc_urls_broad"
+   },
+   "why": "에이전트가 외부로 데이터를 보내거나 인젝션이 섞인 응답을 검토 없이 받는다.",
+   "fix": "필요한 도메인만 허용한다.",
+   "refs": [
+    "https://code.visualstudio.com/docs/agents/run/security"
+   ],
+   "status": "확정",
+   "title_en": "All URLs are auto-approved",
+   "why_en": "The agent can send data out, or take in injected responses, without review.",
+   "fix_en": "Allow only the domains you need.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-PERM-007",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "에이전트 기본 권한이 전체 허용 계열",
+   "severity": "높음",
+   "status": "검토필요",
+   "detect": {
+    "type": "check",
+    "name": "vsc_permission_level"
+   },
+   "why": "Allow all·Bypass·Full Access 계열은 도구 호출 검토 기회를 없앤다. 설정 값의 정확한 표기는 문서로 확정하지 못해 확인이 필요하다.",
+   "fix": "기본 권한을 Manual(기본값)로 둔다.",
+   "refs": [
+    "https://code.visualstudio.com/docs/agents/run/approvals"
+   ],
+   "title_en": "Agent default permission level is an allow-all variant",
+   "why_en": "Allow all, Bypass and Full Access remove the chance to review tool calls. The exact setting values could not be confirmed in the docs, so this needs review.",
+   "fix_en": "Set the default permission level to Manual (the default).",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-PERM-008",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "터미널 확인 질문에 자동으로 답함",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/chat.tools.terminal.autoReplyToPrompts",
+    "values": [
+     true
+    ]
+   },
+   "why": "[y/N] 같은 확인 질문에 에이전트가 기본값으로 자동 응답한다.",
+   "fix": "false로 둔다(기본값).",
+   "refs": [
+    "https://code.visualstudio.com/docs/agents/reference/ai-settings"
+   ],
+   "status": "확정",
+   "title_en": "Terminal confirmation prompts are answered automatically",
+   "why_en": "The agent automatically answers prompts such as [y/N] with the default.",
+   "fix_en": "Set it to false (the default).",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-WS-001",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "저장소 설정이 AI·자동 실행 관련 키를 바꿈",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "vsc_workspace_ai_keys"
+   },
+   "why": "저장소의 .vscode/settings.json은 그 저장소를 연 사람에게 적용된다. AI 자동 승인·MCP·자동 작업·신뢰 설정을 저장소가 들고 올 수 있다.",
+   "fix": "저장소 설정에서 이런 키를 지우고 사용자 설정에서 정한다.",
+   "refs": [
+    "https://code.visualstudio.com/docs/configure/settings"
+   ],
+   "status": "확정",
+   "title_en": "Repository settings change AI or auto-run keys",
+   "why_en": "A repository's .vscode/settings.json applies to whoever opens it, so the repository can bring its own AI auto-approval, MCP, automatic tasks or trust settings.",
+   "fix_en": "Remove these keys from repository settings and decide them in user settings.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-TRUST-001",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "작업 공간 신뢰(제한 모드)를 끔",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/security.workspace.trust.enabled",
+    "values": [
+     false
+    ]
+   },
+   "why": "모르는 저장소를 열어도 제한 모드가 없어 작업·디버그·작업 공간 설정·확장·AI 에이전트가 바로 동작한다.",
+   "fix": "true로 되돌린다(기본값).",
+   "incidents": [
+    "oasis-cursor-2025"
+   ],
+   "refs": [
+    "https://code.visualstudio.com/docs/editor/workspace-trust"
+   ],
+   "status": "확정",
+   "title_en": "Workspace trust (Restricted Mode) is disabled",
+   "why_en": "Opening an unknown repository no longer starts in Restricted Mode, so tasks, debugging, workspace settings, extensions and AI agents work immediately.",
+   "fix_en": "Set it back to true (the default).",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-TRUST-002",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "신뢰하지 않은 낱개 파일을 묻지 않고 신뢰 창에서 엶",
+   "severity": "낮음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/security.workspace.trust.untrustedFiles",
+    "values": [
+     "open"
+    ]
+   },
+   "why": "신뢰 밖 파일이 신뢰한 창에서 열린다.",
+   "fix": "기본값(묻기)으로 둔다.",
+   "refs": [
+    "https://code.visualstudio.com/docs/editor/workspace-trust"
+   ],
+   "status": "확정",
+   "title_en": "Untrusted single files open in a trusted window without asking",
+   "why_en": "Files outside trust open in a trusted window.",
+   "fix_en": "Keep the default (prompt).",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-TASK-001",
+   "tool": "vscode",
+   "tools": [
+    "vscode",
+    "cursor"
+   ],
+   "title": "폴더를 열 때 자동 작업을 묻지 않고 실행(task.allowAutomaticTasks = on)",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/task.allowAutomaticTasks",
+    "values": [
+     "on"
+    ]
+   },
+   "why": "신뢰한 폴더의 folderOpen 작업이 묻지 않고 실행된다.",
+   "fix": "off로 둔다(기본값).",
+   "incidents": [
+    "oasis-cursor-2025"
+   ],
+   "refs": [
+    "https://code.visualstudio.com/docs/editor/tasks"
+   ],
+   "status": "확정",
+   "title_en": "Automatic tasks run on folder open without asking (task.allowAutomaticTasks = on)",
+   "why_en": "folderOpen tasks in trusted folders run without asking.",
+   "fix_en": "Set it to off (the default).",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-TASK-002",
+   "tool": "vscode",
+   "title": "저장소에 폴더를 열면 실행되는 작업(runOn = folderOpen)",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "vsc_folder_open_task"
+   },
+   "why": "저장소를 여는 것만으로 명령이 실행될 수 있다. 작업 공간 신뢰가 꺼져 있거나 자동 작업이 허용돼 있으면 바로 돈다.",
+   "fix": "작업 명령을 확인한다. 모르는 저장소의 이 작업은 지우고, 작업 공간 신뢰를 켠다.",
+   "incidents": [
+    "oasis-cursor-2025"
+   ],
+   "refs": [
+    "https://code.visualstudio.com/docs/editor/tasks"
+   ],
+   "status": "확정",
+   "title_en": "Repository task runs when the folder is opened (runOn = folderOpen)",
+   "why_en": "Just opening the repository can run a command. It runs immediately if workspace trust is off or automatic tasks are allowed.",
+   "fix_en": "Check the task command. Remove such tasks from unknown repositories and turn workspace trust on.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-MCP-003",
+   "tool": "vscode",
+   "title": "다른 도구의 MCP 설정을 가져오도록 켬(chat.mcp.discovery.enabled)",
+   "severity": "낮음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "present",
+    "pointer": "/chat.mcp.discovery.enabled"
+   },
+   "why": "Claude Desktop·Cursor 등 다른 도구에 등록한 MCP 서버가 VS Code에도 붙는다. 점검 범위를 함께 넓혀 봐야 한다.",
+   "fix": "필요 없으면 끈다.",
+   "refs": [
+    "https://code.visualstudio.com/docs/agents/reference/mcp-configuration"
+   ],
+   "status": "확정",
+   "title_en": "MCP discovery from other tools is on (chat.mcp.discovery.enabled)",
+   "why_en": "MCP servers registered in other tools such as Claude Desktop or Cursor are attached to VS Code too, so they need to be reviewed together.",
+   "fix_en": "Turn it off if you don't need it.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-EXT-001",
+   "tool": "vscode",
+   "title": "개발이 중단된(보관된) AI 확장이 설치됨",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "ext_archived"
+   },
+   "why": "Roo Code 저장소는 보관 처리돼 보안 수정이 더 나오지 않는다.",
+   "fix": "확장을 지우고 관리되는 다른 확장으로 바꾼다.",
+   "refs": [
+    "https://github.com/RooCodeInc/Roo-Code"
+   ],
+   "status": "확정",
+   "title_en": "An archived (discontinued) AI extension is installed",
+   "why_en": "The Roo Code repository has been archived and will not receive security fixes.",
+   "fix_en": "Uninstall it and switch to a maintained extension.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "VSC-EXT-002",
+   "tool": "vscode",
+   "title": "악성 프롬프트가 들어간 Amazon Q 확장 1.84.0이 설치됨",
+   "severity": "높음",
+   "detect": {
+    "type": "check",
+    "name": "ext_amazon_q_184"
+   },
+   "why": "이 버전에는 파일과 클라우드 자원을 지우라는 프롬프트가 들어 있었다. AWS는 이 버전을 지우고 1.85.0 이상으로 올리라고 했다.",
+   "fix": "확장을 1.85.0 이상으로 올린다.",
+   "incidents": [
+    "amazon-q-2025"
+   ],
+   "refs": [
+    "https://aws.amazon.com/security/security-bulletins/AWS-2025-015/"
+   ],
+   "status": "확정",
+   "title_en": "Amazon Q extension 1.84.0 with a malicious prompt is installed",
+   "why_en": "This version shipped a prompt telling the agent to wipe files and cloud resources. AWS told users to remove it and upgrade to 1.85.0 or later.",
+   "fix_en": "Upgrade the extension to 1.85.0 or later.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "CUR-TRUST-001",
+   "tool": "cursor",
+   "title": "Cursor에서 작업 공간 신뢰를 켜 두지 않음",
+   "severity": "높음",
+   "status": "검토필요",
+   "detect": {
+    "type": "check",
+    "name": "cur_trust_default"
+   },
+   "why": "보안 업체 보고에 따르면 Cursor는 작업 공간 신뢰가 꺼진 채 배포돼, 저장소의 folderOpen 작업이 폴더를 열자마자 실행됐다. 기본값을 공식 문서로 확인하지 못해 확인이 필요하다.",
+   "fix": "Cursor 사용자 설정에 \"security.workspace.trust.enabled\" true를 명시한다. 기업은 WorkspaceTrustEnabled 정책을 쓴다.",
+   "incidents": [
+    "oasis-cursor-2025"
+   ],
+   "refs": [
+    "https://cursor.com/docs/enterprise/deployment-patterns"
+   ],
+   "title_en": "Workspace trust is not turned on in Cursor",
+   "why_en": "A security firm reported that Cursor ships with workspace trust off, so a repository's folderOpen task ran as soon as the folder was opened. The default could not be confirmed in official docs, so this needs review.",
+   "fix_en": "Set \"security.workspace.trust.enabled\" to true in Cursor user settings. Enterprises can use the WorkspaceTrustEnabled policy.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "CUR-PERM-001",
+   "tool": "cursor",
+   "title": "Cursor CLI 권한에 넓은 허용 규칙",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "cli"
+    ]
+   },
+   "detect": {
+    "type": "list_match",
+    "pointer": "/permissions/allow",
+    "regex": [
+     "Shell\\(\\s*\\*\\s*\\)",
+     "Write\\(\\s*\\*\\*?(/\\*)?\\s*\\)",
+     "Mcp\\(\\s*\\*\\s*:\\s*\\*\\s*\\)",
+     "WebFetch\\(\\s*\\*\\s*\\)"
+    ]
+   },
+   "why": "모든 셸 명령·파일 쓰기·MCP 도구·웹 요청을 확인 없이 허용한다.",
+   "fix": "필요한 명령·경로·도구만 적는다.",
+   "refs": [
+    "https://cursor.com/docs/cli/reference/permissions"
+   ],
+   "status": "확정",
+   "title_en": "Broad allow rules in Cursor CLI permissions",
+   "why_en": "All shell commands, file writes, MCP tools or web requests are allowed without confirmation.",
+   "fix_en": "List only the needed commands, paths and tools.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "CUR-PERM-002",
+   "tool": "cursor",
+   "title": "저장소가 자동 실행 검토 지침(.cursor/permissions.json)을 들고 옴",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "permissions"
+    ]
+   },
+   "detect": {
+    "type": "present",
+    "pointer": "/autoRun"
+   },
+   "why": "저장소가 자동 검토 분류기를 허용 쪽으로 미는 지침을 넣을 수 있다. 공식 문서도 분류기는 보안 경계가 아니라고 한다.",
+   "fix": "지침 내용을 확인하고 모르는 저장소의 파일은 지운다.",
+   "refs": [
+    "https://cursor.com/docs/agent/security/run-modes"
+   ],
+   "status": "확정",
+   "title_en": "Repository ships auto-run review instructions (.cursor/permissions.json)",
+   "why_en": "A repository can push the auto-review classifier toward allowing commands. The docs themselves say the classifier is not a security boundary.",
+   "fix_en": "Read the instructions and remove the file from repositories you don't know.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "CUR-SBX-001",
+   "tool": "cursor",
+   "title": "저장소의 샌드박스 설정이 민감한 폴더까지 읽기 범위를 넓힘",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "cur_sandbox_wide"
+   },
+   "why": "프로젝트 sandbox.json이 사용자 설정보다 우선해, 저장소가 ~/.ssh·~/.aws 같은 폴더를 읽기 범위에 넣을 수 있다.",
+   "fix": "저장소의 additionalReadPaths를 지운다.",
+   "refs": [
+    "https://cursor.com/docs/agent/security/run-modes"
+   ],
+   "status": "확정",
+   "title_en": "Repository sandbox settings extend reads to sensitive folders",
+   "why_en": "A project sandbox.json takes precedence over user settings, so a repository can add folders such as ~/.ssh or ~/.aws to the read scope.",
+   "fix_en": "Remove additionalReadPaths from the repository.",
+   "source": "editors.yaml"
+  },
+  {
+   "id": "GM-PERM-001",
+   "tool": "gemini",
+   "title": "셸 시작 파일·별칭에 모든 도구를 자동 승인하는 플래그(--yolo)",
+   "severity": "높음",
+   "detect": {
+    "type": "shell_regex",
+    "regex": "\\bgemini\\b[^#\\n]*(--yolo\\b|--approval-mode[ =]+yolo|\\s-y(\\s|$))"
+   },
+   "why": "모든 도구 호출이 승인 없이 실행된다. Nx 공급망 공격이 이 플래그로 설치된 Gemini CLI를 실행했다.",
+   "fix": "별칭·스크립트에서 플래그를 지운다.",
+   "incidents": [
+    "nx-s1ngularity-2025"
+   ],
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md"
+   ],
+   "status": "확정",
+   "title_en": "Shell startup file or alias auto-approves every tool (--yolo)",
+   "why_en": "Every tool call runs without approval. The Nx supply-chain attack ran installed Gemini CLIs with this flag.",
+   "fix_en": "Remove the flag from aliases and scripts.",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-PERM-002",
+   "tool": "gemini",
+   "title": "기본 승인 모드가 편집 자동 승인(auto_edit)",
+   "severity": "낮음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/general/defaultApprovalMode",
+    "values": [
+     "auto_edit"
+    ]
+   },
+   "why": "파일 편집 도구가 확인 없이 실행된다.",
+   "fix": "default로 둔다.",
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md"
+   ],
+   "status": "확정",
+   "title_en": "Default approval mode auto-approves edits (auto_edit)",
+   "why_en": "File edit tools run without confirmation.",
+   "fix_en": "Set it to default.",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-PERM-003",
+   "tool": "gemini",
+   "title": "모든 셸 명령을 확인 없이 허용(run_shell_command 전체)",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "list_match",
+    "pointer": "/tools/allowed",
+    "equals": [
+     "run_shell_command"
+    ],
+    "regex": [
+     "run_shell_command\\(\\s*\\*?\\s*\\)"
+    ]
+   },
+   "why": "인자 없이 허용하면 모든 셸 명령이 묻지 않고 실행된다. 허용 접두사 뒤에 명령을 붙여 우회한 사례도 있다.",
+   "fix": "run_shell_command(git status)처럼 필요한 명령만 적는다.",
+   "incidents": [
+    "tracebit-gemini-2025"
+   ],
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md"
+   ],
+   "status": "확정",
+   "title_en": "Every shell command is allowed without confirmation (run_shell_command wildcard)",
+   "why_en": "Allowing it without arguments auto-runs every shell command. Attackers have also bypassed allow-lists by appending commands after an allowed prefix.",
+   "fix_en": "List only specific commands such as run_shell_command(git status).",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-PERM-004",
+   "tool": "gemini",
+   "title": "폴더 신뢰 기능을 끔",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "settings"
+    ],
+    "layer": [
+     "user",
+     "system",
+     "system-defaults"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/security/folderTrust/enabled",
+    "values": [
+     false
+    ]
+   },
+   "why": "신뢰하지 않은 폴더의 프로젝트 설정·.env·MCP 서버가 그대로 적용된다.",
+   "fix": "true로 되돌린다(기본값).",
+   "incidents": [
+    "gemini-cve-2026-12537"
+   ],
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/trusted-folders.md"
+   ],
+   "status": "확정",
+   "title_en": "Folder trust is disabled",
+   "why_en": "Project settings, .env files and MCP servers from untrusted folders apply as-is.",
+   "fix_en": "Set it back to true (the default).",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-PERM-006",
+   "tool": "gemini",
+   "title": "도구 영구 승인(모든 이후 세션 허용) 켬",
+   "severity": "낮음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/security/enablePermanentToolApproval",
+    "values": [
+     true
+    ]
+   },
+   "why": "한 번 누른 승인이 정책 파일에 남아 이후 세션에서도 계속 적용된다.",
+   "fix": "필요 없으면 끈다. ~/.gemini/policies/ 의 allow 규칙을 확인한다.",
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/policy-engine.md"
+   ],
+   "status": "확정",
+   "title_en": "Permanent tool approval (allow for all future sessions) is on",
+   "why_en": "An approval clicked once is written to a policy file and keeps applying in later sessions.",
+   "fix_en": "Turn it off if not needed, and review the allow rules in ~/.gemini/policies/.",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-SBX-001",
+   "tool": "gemini",
+   "title": "샌드박스 안에서 네트워크 허용",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/tools/sandboxNetworkAccess",
+    "values": [
+     true
+    ]
+   },
+   "why": "샌드박스 안에서 실행된 명령이 외부로 데이터를 보낼 수 있다.",
+   "fix": "false로 둔다(기본값).",
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md"
+   ],
+   "status": "확정",
+   "title_en": "Network allowed inside the sandbox",
+   "why_en": "Commands run inside the sandbox can send data out.",
+   "fix_en": "Set it to false (the default).",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-MCP-001",
+   "tool": "gemini",
+   "title": "MCP 서버의 모든 도구 확인을 건너뜀(trust = true)",
+   "severity": "높음",
+   "docs": {
+    "kind": [
+     "settings"
+    ]
+   },
+   "detect": {
+    "type": "equals",
+    "pointer": "/mcpServers/*/trust",
+    "values": [
+     true
+    ]
+   },
+   "why": "공식 문서 표현 그대로 이 서버의 모든 도구 호출 확인을 건너뛴다. 쓰기·외부 전송 도구도 묻지 않는다.",
+   "fix": "trust를 지우고 필요한 도구만 includeTools로 고른다.",
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md"
+   ],
+   "status": "확정",
+   "title_en": "All tool confirmations skipped for an MCP server (trust = true)",
+   "why_en": "In the docs' own words, this bypasses all tool call confirmations for the server, including tools that write or send data out.",
+   "fix_en": "Remove trust and pick only the needed tools with includeTools.",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-MCP-002",
+   "tool": "gemini",
+   "title": "MCP 서버 이름에 밑줄(_)이 있음",
+   "severity": "낮음",
+   "detect": {
+    "type": "check",
+    "name": "gm_mcp_underscore"
+   },
+   "why": "공식 문서는 서버 이름에 밑줄이 있으면 정책 엔진이 이름을 잘못 읽어 보안 정책이 조용히 실패할 수 있다고 경고한다.",
+   "fix": "밑줄 대신 하이픈(-)을 쓴다.",
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md"
+   ],
+   "status": "확정",
+   "title_en": "MCP server name contains an underscore (_)",
+   "why_en": "The official docs warn that an underscore in a server name can make the policy engine misread it, so security policies fail silently.",
+   "fix_en": "Use a hyphen (-) instead.",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-HOOK-001",
+   "tool": "gemini",
+   "title": "저장소 설정에 훅(자동 실행 명령)이 있음",
+   "severity": "중간",
+   "docs": {
+    "kind": [
+     "settings"
+    ],
+    "layer": [
+     "project"
+    ]
+   },
+   "detect": {
+    "type": "present",
+    "pointer": "/hooks"
+   },
+   "why": "훅은 사용자 권한으로 임의 명령을 실행한다(공식 문서 경고).",
+   "fix": "훅 명령을 확인하고 모르는 명령이면 지운다.",
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/hooks/index.md"
+   ],
+   "status": "확정",
+   "title_en": "Repository settings contain hooks (auto-run commands)",
+   "why_en": "Hooks run arbitrary commands with the user's privileges (official docs warning).",
+   "fix_en": "Check the hook commands and remove any you don't recognize.",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-SEC-001",
+   "tool": "gemini",
+   "title": "저장소의 .gemini/.env에 API 키가 평문으로 있음",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "gm_dotenv_key"
+   },
+   "why": "저장소 안 파일은 실수로 커밋되기 쉽고, 폴더 신뢰를 우회한 사례에서는 이 파일이 그대로 읽혔다.",
+   "fix": "키를 사용자 폴더(~/.gemini/.env)나 비밀 관리 도구로 옮기고 .gitignore를 확인한다.",
+   "incidents": [
+    "gemini-cve-2026-12537"
+   ],
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/resources/faq.md"
+   ],
+   "status": "확정",
+   "title_en": "API key in plaintext in the repository's .gemini/.env",
+   "why_en": "Files inside a repository are easy to commit by accident, and in a folder-trust bypass this file was read directly.",
+   "fix_en": "Move the key to your user folder (~/.gemini/.env) or a secrets manager, and check .gitignore.",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-SEC-003",
+   "tool": "gemini",
+   "title": "MCP OAuth 토큰 파일 권한이 넓음",
+   "severity": "중간",
+   "os": [
+    "macos",
+    "linux"
+   ],
+   "detect": {
+    "type": "file_mode",
+    "paths": [
+     "{home}/.gemini/mcp-oauth-tokens.json"
+    ]
+   },
+   "why": "권한이 넓으면 다른 계정이 MCP 서버 인증 토큰을 읽는다.",
+   "fix": "chmod 600 으로 권한을 줄인다.",
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md"
+   ],
+   "status": "확정",
+   "title_en": "MCP OAuth token file permissions are too broad",
+   "why_en": "With broad permissions, other accounts can read MCP server auth tokens.",
+   "fix_en": "Restrict it with chmod 600.",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-MGMT-001",
+   "tool": "gemini",
+   "title": "기업 시스템 설정에 YOLO 금지가 없음",
+   "severity": "중간",
+   "enterprise": true,
+   "detect": {
+    "type": "check",
+    "name": "gm_managed_missing"
+   },
+   "why": "사용자가 --yolo로 모든 도구를 자동 승인할 수 있다.",
+   "fix": "시스템 settings.json에 security.disableYoloMode 또는 admin.secureModeEnabled를 둔다.",
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/enterprise.md"
+   ],
+   "status": "확정",
+   "title_en": "System settings do not block YOLO mode",
+   "why_en": "Users can auto-approve every tool with --yolo.",
+   "fix_en": "Set security.disableYoloMode or admin.secureModeEnabled in the system settings.json.",
+   "source": "gemini.yaml"
+  },
+  {
+   "id": "GM-MGMT-002",
+   "tool": "gemini",
+   "title": "시스템 설정 경로를 바꾸는 환경 변수가 설정됨",
+   "severity": "중간",
+   "detect": {
+    "type": "check",
+    "name": "gm_env_override"
+   },
+   "why": "사용자가 이 변수로 관리자 시스템 설정 대신 다른 파일을 읽게 해 정책을 우회할 수 있다.",
+   "fix": "변수를 지운다. 기업은 래퍼 스크립트로 경로를 고정한다(공식 문서 권고).",
+   "refs": [
+    "https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/enterprise.md"
+   ],
+   "status": "확정",
+   "title_en": "An environment variable overrides the system settings path",
+   "why_en": "Users can point Gemini CLI at a different file than the admin's system settings and bypass policy.",
+   "fix_en": "Remove the variable. Enterprises can pin the path with a wrapper script (as the docs recommend).",
+   "source": "gemini.yaml"
+  }
+ ]
+}

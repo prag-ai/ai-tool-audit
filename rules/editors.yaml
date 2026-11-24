@@ -1,0 +1,201 @@
+# VS Code·Cursor 규칙(두 편집기는 설정 키가 같다). 근거: docs/research/02 1·2절, 03 4절.
+rules:
+  - id: VSC-PERM-001
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 모든 AI 도구를 자동 승인(chat.tools.global.autoApprove)
+    severity: 높음
+    docs: {kind: [settings]}
+    detect: {type: equals, pointer: /chat.tools.global.autoApprove, values: [true]}
+    why: 공식 문서 표현 그대로 핵심 보안 보호를 끈다. 파일 편집·명령 실행·외부 도구 호출을 묻지 않는다. 프롬프트 인젝션으로 이 값을 써 넣게 한 취약점도 있었다.
+    fix: false로 둔다(기본값). 필요한 명령만 chat.tools.terminal.autoApprove에 좁게 적는다.
+    incidents: [copilot-cve-2025-53773]
+    refs: [https://code.visualstudio.com/docs/agents/run/approvals]
+
+  - id: VSC-PERM-002
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 터미널 자동 승인에 범용 실행기·전체 패턴·위험 명령이 들어 있음
+    severity: 높음
+    detect: {type: check, name: vsc_terminal_autoapprove}
+    why: bash·python·node 같은 실행기나 '/.*/' 패턴을 허용하면 사실상 모든 명령이 자동 실행된다. rm·curl 같은 기본 거부 명령을 허용으로 바꾼 것도 위험 신호다.
+    fix: 실행기·전체 패턴을 지우고 '/^npm run lint$/'처럼 정확한 명령만 둔다.
+    refs: [https://code.visualstudio.com/docs/agents/run/approvals]
+
+  - id: VSC-PERM-004
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 터미널 기본 거부 규칙을 무시하도록 설정
+    severity: 중간
+    docs: {kind: [settings]}
+    detect: {type: equals, pointer: /chat.tools.terminal.ignoreDefaultAutoApproveRules, values: [true]}
+    why: rm·curl·eval 같은 기본 거부 목록이 빠진다.
+    fix: false로 둔다.
+    refs: [https://code.visualstudio.com/docs/agents/run/approvals]
+
+  - id: VSC-PERM-005
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 모든 파일 편집을 자동 승인
+    severity: 중간
+    detect: {type: check, name: vsc_edits_broad}
+    why: '**/* 같은 넓은 글롭을 허용하면 .vscode 설정·.env 편집도 묻지 않는다. 에이전트가 자기 설정을 고쳐 자동 승인을 켤 수 있다.'
+    fix: 넓은 글롭을 지우고 필요한 폴더만 허용한다.
+    incidents: [copilot-cve-2025-53773]
+    refs: [https://code.visualstudio.com/docs/agents/reference/ai-settings]
+
+  - id: VSC-PERM-006
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 모든 URL을 자동 승인
+    severity: 중간
+    detect: {type: check, name: vsc_urls_broad}
+    why: 에이전트가 외부로 데이터를 보내거나 인젝션이 섞인 응답을 검토 없이 받는다.
+    fix: 필요한 도메인만 허용한다.
+    refs: [https://code.visualstudio.com/docs/agents/run/security]
+
+  - id: VSC-PERM-007
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 에이전트 기본 권한이 전체 허용 계열
+    severity: 높음
+    status: 검토필요
+    detect: {type: check, name: vsc_permission_level}
+    why: Allow all·Bypass·Full Access 계열은 도구 호출 검토 기회를 없앤다. 설정 값의 정확한 표기는 문서로 확정하지 못해 확인이 필요하다.
+    fix: 기본 권한을 Manual(기본값)로 둔다.
+    refs: [https://code.visualstudio.com/docs/agents/run/approvals]
+
+  - id: VSC-PERM-008
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 터미널 확인 질문에 자동으로 답함
+    severity: 중간
+    docs: {kind: [settings]}
+    detect: {type: equals, pointer: /chat.tools.terminal.autoReplyToPrompts, values: [true]}
+    why: '[y/N] 같은 확인 질문에 에이전트가 기본값으로 자동 응답한다.'
+    fix: false로 둔다(기본값).
+    refs: [https://code.visualstudio.com/docs/agents/reference/ai-settings]
+
+  - id: VSC-WS-001
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 저장소 설정이 AI·자동 실행 관련 키를 바꿈
+    severity: 중간
+    detect: {type: check, name: vsc_workspace_ai_keys}
+    why: 저장소의 .vscode/settings.json은 그 저장소를 연 사람에게 적용된다. AI 자동 승인·MCP·자동 작업·신뢰 설정을 저장소가 들고 올 수 있다.
+    fix: 저장소 설정에서 이런 키를 지우고 사용자 설정에서 정한다.
+    refs: [https://code.visualstudio.com/docs/configure/settings]
+
+  - id: VSC-TRUST-001
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 작업 공간 신뢰(제한 모드)를 끔
+    severity: 높음
+    docs: {kind: [settings]}
+    detect: {type: equals, pointer: /security.workspace.trust.enabled, values: [false]}
+    why: 모르는 저장소를 열어도 제한 모드가 없어 작업·디버그·작업 공간 설정·확장·AI 에이전트가 바로 동작한다.
+    fix: true로 되돌린다(기본값).
+    incidents: [oasis-cursor-2025]
+    refs: [https://code.visualstudio.com/docs/editor/workspace-trust]
+
+  - id: VSC-TRUST-002
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 신뢰하지 않은 낱개 파일을 묻지 않고 신뢰 창에서 엶
+    severity: 낮음
+    docs: {kind: [settings]}
+    detect: {type: equals, pointer: /security.workspace.trust.untrustedFiles, values: [open]}
+    why: 신뢰 밖 파일이 신뢰한 창에서 열린다.
+    fix: 기본값(묻기)으로 둔다.
+    refs: [https://code.visualstudio.com/docs/editor/workspace-trust]
+
+  - id: VSC-TASK-001
+    tool: vscode
+    tools: [vscode, cursor]
+    title: 폴더를 열 때 자동 작업을 묻지 않고 실행(task.allowAutomaticTasks = on)
+    severity: 중간
+    docs: {kind: [settings]}
+    detect: {type: equals, pointer: /task.allowAutomaticTasks, values: ["on"]}
+    why: 신뢰한 폴더의 folderOpen 작업이 묻지 않고 실행된다.
+    fix: off로 둔다(기본값).
+    incidents: [oasis-cursor-2025]
+    refs: [https://code.visualstudio.com/docs/editor/tasks]
+
+  - id: VSC-TASK-002
+    tool: vscode
+    title: 저장소에 폴더를 열면 실행되는 작업(runOn = folderOpen)
+    severity: 중간
+    detect: {type: check, name: vsc_folder_open_task}
+    why: 저장소를 여는 것만으로 명령이 실행될 수 있다. 작업 공간 신뢰가 꺼져 있거나 자동 작업이 허용돼 있으면 바로 돈다.
+    fix: 작업 명령을 확인한다. 모르는 저장소의 이 작업은 지우고, 작업 공간 신뢰를 켠다.
+    incidents: [oasis-cursor-2025]
+    refs: [https://code.visualstudio.com/docs/editor/tasks]
+
+  - id: VSC-MCP-003
+    tool: vscode
+    title: 다른 도구의 MCP 설정을 가져오도록 켬(chat.mcp.discovery.enabled)
+    severity: 낮음
+    docs: {kind: [settings]}
+    detect: {type: present, pointer: /chat.mcp.discovery.enabled}
+    why: Claude Desktop·Cursor 등 다른 도구에 등록한 MCP 서버가 VS Code에도 붙는다. 점검 범위를 함께 넓혀 봐야 한다.
+    fix: 필요 없으면 끈다.
+    refs: [https://code.visualstudio.com/docs/agents/reference/mcp-configuration]
+
+  - id: VSC-EXT-001
+    tool: vscode
+    title: 개발이 중단된(보관된) AI 확장이 설치됨
+    severity: 중간
+    detect: {type: check, name: ext_archived}
+    why: Roo Code 저장소는 보관 처리돼 보안 수정이 더 나오지 않는다.
+    fix: 확장을 지우고 관리되는 다른 확장으로 바꾼다.
+    refs: [https://github.com/RooCodeInc/Roo-Code]
+
+  - id: VSC-EXT-002
+    tool: vscode
+    title: 악성 프롬프트가 들어간 Amazon Q 확장 1.84.0이 설치됨
+    severity: 높음
+    detect: {type: check, name: ext_amazon_q_184}
+    why: 이 버전에는 파일과 클라우드 자원을 지우라는 프롬프트가 들어 있었다. AWS는 이 버전을 지우고 1.85.0 이상으로 올리라고 했다.
+    fix: 확장을 1.85.0 이상으로 올린다.
+    incidents: [amazon-q-2025]
+    refs: [https://aws.amazon.com/security/security-bulletins/AWS-2025-015/]
+
+  - id: CUR-TRUST-001
+    tool: cursor
+    title: Cursor에서 작업 공간 신뢰를 켜 두지 않음
+    severity: 높음
+    status: 검토필요
+    detect: {type: check, name: cur_trust_default}
+    why: 보안 업체 보고에 따르면 Cursor는 작업 공간 신뢰가 꺼진 채 배포돼, 저장소의 folderOpen 작업이 폴더를 열자마자 실행됐다. 기본값을 공식 문서로 확인하지 못해 확인이 필요하다.
+    fix: Cursor 사용자 설정에 "security.workspace.trust.enabled" true를 명시한다. 기업은 WorkspaceTrustEnabled 정책을 쓴다.
+    incidents: [oasis-cursor-2025]
+    refs: [https://cursor.com/docs/enterprise/deployment-patterns]
+
+  - id: CUR-PERM-001
+    tool: cursor
+    title: Cursor CLI 권한에 넓은 허용 규칙
+    severity: 높음
+    docs: {kind: [cli]}
+    detect: {type: list_match, pointer: /permissions/allow, regex: ['Shell\(\s*\*\s*\)', 'Write\(\s*\*\*?(/\*)?\s*\)', 'Mcp\(\s*\*\s*:\s*\*\s*\)', 'WebFetch\(\s*\*\s*\)']}
+    why: 모든 셸 명령·파일 쓰기·MCP 도구·웹 요청을 확인 없이 허용한다.
+    fix: 필요한 명령·경로·도구만 적는다.
+    refs: [https://cursor.com/docs/cli/reference/permissions]
+
+  - id: CUR-PERM-002
+    tool: cursor
+    title: 저장소가 자동 실행 검토 지침(.cursor/permissions.json)을 들고 옴
+    severity: 중간
+    docs: {kind: [permissions]}
+    detect: {type: present, pointer: /autoRun}
+    why: 저장소가 자동 검토 분류기를 허용 쪽으로 미는 지침을 넣을 수 있다. 공식 문서도 분류기는 보안 경계가 아니라고 한다.
+    fix: 지침 내용을 확인하고 모르는 저장소의 파일은 지운다.
+    refs: [https://cursor.com/docs/agent/security/run-modes]
+
+  - id: CUR-SBX-001
+    tool: cursor
+    title: 저장소의 샌드박스 설정이 민감한 폴더까지 읽기 범위를 넓힘
+    severity: 중간
+    detect: {type: check, name: cur_sandbox_wide}
+    why: 프로젝트 sandbox.json이 사용자 설정보다 우선해, 저장소가 ~/.ssh·~/.aws 같은 폴더를 읽기 범위에 넣을 수 있다.
+    fix: 저장소의 additionalReadPaths를 지운다.
+    refs: [https://cursor.com/docs/agent/security/run-modes]

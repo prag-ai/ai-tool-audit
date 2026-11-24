@@ -1,0 +1,155 @@
+# Claude Code 규칙. 근거: docs/research/01 1절, 03 4절.
+# 필드 설명은 docs/설계.md 4.2절.
+rules:
+  - id: CC-PERM-001
+    tool: claude-code
+    title: 모든 작업을 묻지 않고 실행하는 권한 모드(bypassPermissions)
+    severity: 높음
+    docs: {kind: [settings], layer: [user, managed]}
+    detect: {type: equals, pointer: /permissions/defaultMode, values: [bypassPermissions]}
+    why: 이 모드에서는 Claude Code가 셸 명령·파일 쓰기·.git과 .claude 같은 보호 경로 쓰기까지 묻지 않고 실행한다. 공식 문서는 컨테이너·VM 같은 격리 환경에서만 쓰라고 경고한다.
+    fix: defaultMode를 default로 되돌리고, 필요하면 격리된 컨테이너 안에서만 이 모드를 쓴다. 기업 PC는 관리 설정에 permissions.disableBypassPermissionsMode = "disable"을 둔다.
+    refs: [https://code.claude.com/docs/en/permissions]
+
+  - id: CC-PERM-002
+    tool: claude-code
+    title: 저장소 설정에 bypassPermissions가 들어 있음
+    severity: 높음
+    detect: {type: check, name: cc_project_bypass}
+    why: 저장소를 받은 사람의 PC에서 권한 확인이 꺼질 수 있다. 버전에 따라 효력이 다르며, 옛 버전은 신뢰 대화상자까지 생략했다.
+    fix: 저장소의 .claude/settings.json·settings.local.json에서 이 값을 지우고 Claude Code를 최신으로 올린다.
+    incidents: [cve-2026-33068]
+    refs: [https://code.claude.com/docs/en/settings-reference]
+
+  - id: CC-PERM-003
+    tool: claude-code
+    title: 우회 모드 확인창을 건너뛰도록 설정됨(우회 모드를 쓴 흔적)
+    severity: 중간
+    docs: {kind: [settings], layer: [user]}
+    detect: {type: equals, pointer: /skipDangerousModePermissionPrompt, values: [true]}
+    why: 사용자가 권한 우회 모드의 경고를 수락하면 Claude Code가 이 값을 써 넣는다. 이 PC에서 우회 모드가 실제로 쓰였다는 뜻이다.
+    fix: 우회 모드를 어디서 왜 썼는지 확인하고, 필요 없으면 이 값을 지운다.
+    refs: [https://code.claude.com/docs/en/settings-reference]
+
+  - id: CC-PERM-004
+    tool: claude-code
+    title: 셸 시작 파일·별칭에 권한 확인을 끄는 플래그
+    severity: 높음
+    detect: {type: shell_regex, regex: '\bclaude\b[^#\n]*(--dangerously-skip-permissions|--permission-mode[ =]+bypassPermissions)'}
+    why: 별칭이나 스크립트에 박혀 있으면 Claude Code가 매번 권한 확인 없이 실행된다. Nx 공급망 공격은 바로 이 플래그로 설치된 AI CLI를 실행해 비밀값을 뒤졌다.
+    fix: 별칭·스크립트에서 플래그를 지운다. 자동화가 필요하면 허용할 명령만 permissions.allow에 적는다.
+    incidents: [nx-s1ngularity-2025]
+    refs: [https://code.claude.com/docs/en/settings-reference]
+
+  - id: CC-PERM-005
+    tool: claude-code
+    title: 모든 셸 명령을 묻지 않고 실행하도록 허용(Bash 전체)
+    severity: 높음
+    docs: {kind: [settings]}
+    detect: {type: list_match, pointer: /permissions/allow, equals: [Bash], regex: ['Bash\(\s*\*\s*\)']}
+    why: 허용 목록에 Bash 전체가 있으면 AI가 만든 셸 명령이 확인 없이 실행된다. 프롬프트 인젝션된 명령도 그대로 돈다.
+    fix: Bash 전체 대신 필요한 명령만 Bash(npm test)처럼 적는다.
+    incidents: [nx-s1ngularity-2025]
+    refs: [https://code.claude.com/docs/en/permissions]
+
+  - id: CC-PERM-006
+    tool: claude-code
+    title: 모든 웹 주소 또는 MCP 서버의 모든 도구를 허용
+    severity: 중간
+    docs: {kind: [settings]}
+    detect: {type: list_match, pointer: /permissions/allow, equals: [WebFetch], regex: ['WebFetch\(domain:\*\)', 'mcp__[A-Za-z0-9-]+(__\*)?']}
+    why: WebFetch 전체 허용은 어느 사이트든 묻지 않고 읽게 해 프롬프트 인젝션 통로가 된다. 서버 단위 MCP 허용은 그 서버의 쓰기 도구까지 묻지 않게 만든다.
+    fix: 필요한 도메인(WebFetch(domain:docs.example.com))과 도구(mcp__서버__도구)만 적는다.
+    refs: [https://code.claude.com/docs/en/permissions]
+
+  - id: CC-MCP-001
+    tool: claude-code
+    title: 저장소의 MCP 서버를 묻지 않고 모두 승인(enableAllProjectMcpServers)
+    severity: 높음
+    docs: {kind: [settings]}
+    detect: {type: equals, pointer: /enableAllProjectMcpServers, values: [true]}
+    why: 저장소의 .mcp.json에 서버가 추가되면 확인 없이 연결된다. MCP 서버는 사용자 PC에서 실행되는 프로그램이다.
+    fix: 이 값을 지우고, 쓸 서버만 enabledMcpjsonServers에 이름으로 적는다.
+    incidents: [checkpoint-claude-2026]
+    refs: [https://code.claude.com/docs/en/settings-reference]
+
+  - id: CC-HOOK-001
+    tool: claude-code
+    title: 저장소 설정에 훅(자동 실행 명령)이 있음
+    severity: 중간
+    docs: {kind: [settings], layer: [project, local]}
+    detect: {type: present, pointer: /hooks}
+    why: 저장소의 훅은 저장소를 받은 사람 PC에서 세션 시작·도구 실행 때마다 셸 명령으로 실행된다.
+    fix: 훅의 명령을 읽어 보고, 모르는 명령이면 지운다. 기업 PC는 관리 설정에 allowManagedHooksOnly를 둔다.
+    incidents: [checkpoint-claude-2026]
+    refs: [https://code.claude.com/docs/en/hooks]
+
+  - id: CC-HOOK-002
+    tool: claude-code
+    title: 외부 주소로 보내는 http 훅에 주소 제한이 없음
+    severity: 높음
+    detect: {type: check, name: cc_http_hook}
+    why: http 훅은 도구 입력·출력이 담긴 이벤트 JSON을 지정한 주소로 보낸다. allowedHttpHookUrls가 없으면 어느 주소로든 보낼 수 있다.
+    fix: 훅 주소를 확인하고 allowedHttpHookUrls에 허용 주소만 적는다.
+    refs: [https://code.claude.com/docs/en/hooks]
+
+  - id: CC-HOOK-003
+    tool: claude-code
+    title: 저장소 설정에 자동으로 실행되는 명령 키(apiKeyHelper 등)
+    severity: 중간
+    docs: {kind: [settings], layer: [project, local]}
+    detect: {type: present, pointers: [/apiKeyHelper, /awsCredentialExport, /awsAuthRefresh, /otelHeadersHelper, /statusLine]}
+    why: 이름은 훅이 아니지만 설정 파일에 적힌 셸 명령이 자동으로 실행된다.
+    fix: 명령 내용을 확인하고, 저장소가 아니라 사용자 설정에 두는 것을 검토한다.
+    refs: [https://code.claude.com/docs/en/settings-reference]
+
+  - id: CC-SEC-001
+    tool: claude-code
+    title: 설정 파일 env 블록에 비밀값이 직접 적혀 있음
+    severity: 중간
+    detect: {type: check, name: cc_env_secret}
+    why: 설정 파일은 백업·동기화·악성 패키지의 파일 수집기 표적이다. 저장소 설정이면 키가 커밋된다.
+    fix: 값을 지우고 키체인이나 비밀 관리 도구, 셸 밖의 안전한 저장소에서 불러온다.
+    incidents: [bitwarden-cli-2026]
+    refs: [https://code.claude.com/docs/en/settings-reference]
+
+  - id: CC-SEC-003
+    tool: claude-code
+    title: 로그인 자격 증명 파일 권한이 넓음
+    severity: 높음
+    os: [macos, linux]
+    detect: {type: file_mode, paths: ['{claude_dir}/.credentials.json']}
+    why: 권한이 600보다 넓으면 같은 PC의 다른 계정이나 프로세스가 로그인 토큰을 읽을 수 있다.
+    fix: chmod 600 으로 권한을 줄인다.
+    refs: [https://code.claude.com/docs/en/authentication]
+
+  - id: CC-SEC-004
+    tool: claude-code
+    title: macOS에서 자격 증명이 키체인 대신 파일에 저장됨
+    severity: 낮음
+    os: [macos]
+    detect: {type: file_exists, paths: ['{claude_dir}/.credentials.json']}
+    why: macOS는 원래 키체인에 저장한다. 이 파일이 있으면 키체인 쓰기가 실패해 평문 파일로 대체된 것이다.
+    fix: 파일 권한을 확인하고, 다시 로그인해 키체인에 저장되는지 본다.
+    refs: [https://code.claude.com/docs/en/authentication]
+
+  - id: CC-SEC-006
+    tool: claude-code
+    title: 저장소 설정이 API 주소(ANTHROPIC_BASE_URL)를 바꿈
+    severity: 높음
+    docs: {kind: [settings], layer: [project, local]}
+    detect: {type: present, pointer: /env/ANTHROPIC_BASE_URL}
+    why: 저장소 설정으로 API 요청을 다른 서버로 돌리면 API 키와 대화 내용이 그 서버로 간다. Check Point가 이 방법으로 키 유출을 보였다(2.0.65에서 수정).
+    fix: 저장소 설정에서 ANTHROPIC_BASE_URL을 지운다. 사내 게이트웨이가 필요하면 관리 설정으로 둔다.
+    incidents: [checkpoint-claude-2026]
+    refs: [https://github.com/advisories/GHSA-jh7p-qr78-84p7]
+
+  - id: CC-MGMT-002
+    tool: claude-code
+    title: 기업 관리 설정에 핵심 잠금 키가 없음
+    severity: 중간
+    enterprise: true
+    detect: {type: check, name: cc_managed_missing}
+    why: 관리 설정이 없거나 잠금 키가 빠지면 사용자 설정과 저장소 설정이 회사 정책을 넘어선다.
+    fix: managed-settings.json에 permissions.disableBypassPermissionsMode, allowManagedHooksOnly, allowManagedMcpServersOnly를 둔다.
+    refs: [https://code.claude.com/docs/en/managed-settings]

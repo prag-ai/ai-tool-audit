@@ -1,0 +1,13 @@
+# Claude Desktop 규칙. 근거: docs/research/01 2절.
+# MCP 서버 점검은 공통 규칙(ALL-MCP-*)이 claude_desktop_config.json에도 적용된다.
+rules:
+  - id: CD-MGMT-001
+    tool: claude-desktop
+    title: Claude Desktop 기업 정책이 없거나 확장으로 로컬 MCP를 열 수 있음
+    severity: 중간
+    status: 검토필요
+    enterprise: true
+    detect: {type: check, name: cd_policy_missing}
+    why: 정책이 없으면 로컬 MCP·데스크톱 확장·Claude Code가 모두 켜진 기본값이다. 로컬 MCP만 꺼도 데스크톱 확장으로 로컬 서버를 실행할 수 있다. 정책 파일 경로는 제3자 배포 문서 기준이라 확인이 필요하다.
+    fix: 관리 프로파일(macOS)·레지스트리(Windows)로 isLocalDevMcpEnabled와 isDesktopExtensionEnabled를 함께 정한다.
+    refs: [https://support.claude.com/en/articles/12622667-enterprise-configuration-for-claude-desktop]

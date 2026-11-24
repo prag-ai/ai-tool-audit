@@ -1,0 +1,44 @@
+# English text for every incident in data/incidents.yaml. scripts/build_rules.py fails if one is missing.
+incidents:
+  nx-s1ngularity-2025:
+    title: Nx "s1ngularity" supply-chain attack
+    summary: A malicious nx package ran the installed claude, gemini and q CLIs with permission checks disabled to search the machine for secrets.
+  amazon-q-2025:
+    title: Malicious prompt in Amazon Q Developer VS Code extension 1.84.0
+    summary: A prompt slipped into the release told Q CLI to trust all tools and wipe files and cloud resources.
+  postmark-mcp-2025:
+    title: Malicious postmark-mcp update
+    summary: After 15 legitimate versions, 1.0.16 silently BCC'd every outgoing email to the attacker. Users without a pinned version received it automatically.
+  mcp-remote-2025:
+    title: mcp-remote remote code execution (CVE-2025-6514)
+    summary: A malicious remote MCP server could run commands on the user's machine through a crafted authorization endpoint. Plain http also exposes it to man-in-the-middle attacks.
+  checkpoint-claude-2026:
+    title: Claude Code project-file RCE and key theft (Check Point)
+    summary: Hooks, MCP auto-approval and ANTHROPIC_BASE_URL in a repository's .claude/settings.json could run commands and steal API keys before the trust dialog.
+  cve-2026-33068:
+    title: Claude Code trust dialog skipped (CVE-2026-33068)
+    summary: defaultMode bypassPermissions in repository settings skipped the trust dialog. Fixed in 2.1.53.
+  codex-cve-2025-61260:
+    title: Codex CLI command execution via project config (CVE-2025-61260)
+    summary: Codex read a repository's .codex/config.toml without confirmation, so commands in a malicious MCP config ran immediately.
+  sandworm-mode-2026:
+    title: SANDWORM_MODE npm worm
+    summary: Secretly added malicious servers to AI tool mcpServers configs, with hidden instructions to hand over SSH keys and cloud credentials.
+  bitwarden-cli-2026:
+    title: Malicious @bitwarden/cli 2026.4.0
+    summary: A malicious release under the legitimate package name collected AI and MCP config files such as ~/.claude.json and ~/.claude/mcp.json at install (preinstall), along with SSH keys, .env files and cloud credentials.
+  copilot-cve-2025-53773:
+    title: GitHub Copilot / VS Code remote code execution (CVE-2025-53773)
+    summary: Prompt injection made the agent write chat.tools.autoApprove = true into a settings file, so later commands ran without approval.
+  oasis-cursor-2025:
+    title: Cursor ships with workspace trust off (Oasis Security)
+    summary: Reported that because workspace trust was off by default, a folderOpen task in a repository's .vscode/tasks.json ran just by opening the folder.
+  cursor-mcpoison-2025:
+    title: Cursor MCPoison (CVE-2025-54136)
+    summary: Once a repository's MCP config was approved, silent changes were not re-confirmed, so a collaborator could swap an MCP server command for a malicious one.
+  gemini-cve-2026-12537:
+    title: Gemini CLI automatic folder trust (CVE-2026-12537)
+    summary: In headless runs the folder was trusted automatically, so the repository's .gemini/.env was read and the tool allow-list was ignored with --yolo. Fixed in 0.39.1.
+  tracebit-gemini-2025:
+    title: Gemini CLI allow-list bypass (Tracebit)
+    summary: Instructions hidden in a README plus a malicious command appended to an allowed command prefix ran without approval and exfiltrated environment variables.

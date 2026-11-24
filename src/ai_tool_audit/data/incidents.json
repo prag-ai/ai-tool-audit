@@ -1,0 +1,130 @@
+{
+ "incidents": [
+  {
+   "id": "nx-s1ngularity-2025",
+   "date": "2025-08-26",
+   "title": "Nx s1ngularity 공급망 공격",
+   "summary": "악성 nx 패키지가 설치된 claude·gemini·q CLI를 권한 확인 끄는 플래그로 실행해 PC의 비밀값을 뒤지게 했다.",
+   "url": "https://github.com/nrwl/nx/security/advisories/GHSA-cxm3-wv7p-598c",
+   "title_en": "Nx \"s1ngularity\" supply-chain attack",
+   "summary_en": "A malicious nx package ran the installed claude, gemini and q CLIs with permission checks disabled to search the machine for secrets."
+  },
+  {
+   "id": "amazon-q-2025",
+   "date": "2025-07-23",
+   "title": "Amazon Q Developer VS Code 확장 1.84.0 악성 프롬프트",
+   "summary": "릴리스에 섞여 들어간 프롬프트가 Q CLI에 모든 도구를 신뢰하게 하고 파일·클라우드 자원을 지우라고 지시했다.",
+   "url": "https://aws.amazon.com/security/security-bulletins/AWS-2025-015/",
+   "title_en": "Malicious prompt in Amazon Q Developer VS Code extension 1.84.0",
+   "summary_en": "A prompt slipped into the release told Q CLI to trust all tools and wipe files and cloud resources."
+  },
+  {
+   "id": "postmark-mcp-2025",
+   "date": "2025-09-25",
+   "title": "postmark-mcp 악성 업데이트",
+   "summary": "정상 버전 15개 뒤 1.0.16에서 보내는 모든 메일을 공격자에게 숨은 참조로 보냈다. 버전을 고정하지 않은 사용자가 자동으로 받았다.",
+   "url": "https://osv.dev/vulnerability/MAL-2025-47604",
+   "title_en": "Malicious postmark-mcp update",
+   "summary_en": "After 15 legitimate versions, 1.0.16 silently BCC'd every outgoing email to the attacker. Users without a pinned version received it automatically."
+  },
+  {
+   "id": "mcp-remote-2025",
+   "date": "2025-07-09",
+   "title": "mcp-remote 원격 코드 실행(CVE-2025-6514)",
+   "summary": "악성 원격 MCP 서버가 조작한 인증 주소로 사용자 PC에서 명령을 실행할 수 있었다. 평문 http는 중간자 공격에도 열린다.",
+   "url": "https://github.com/advisories/GHSA-6xpm-ggf7-wc3p",
+   "title_en": "mcp-remote remote code execution (CVE-2025-6514)",
+   "summary_en": "A malicious remote MCP server could run commands on the user's machine through a crafted authorization endpoint. Plain http also exposes it to man-in-the-middle attacks."
+  },
+  {
+   "id": "checkpoint-claude-2026",
+   "date": "2026-02-25",
+   "title": "Claude Code 프로젝트 파일 RCE·키 유출(Check Point)",
+   "summary": "저장소의 .claude/settings.json 훅, MCP 자동 승인, ANTHROPIC_BASE_URL로 신뢰 대화상자 전에 명령을 실행하고 API 키를 빼낼 수 있었다.",
+   "url": "https://research.checkpoint.com/2026/rce-and-api-token-exfiltration-through-claude-code-project-files-cve-2025-59536/",
+   "title_en": "Claude Code project-file RCE and key theft (Check Point)",
+   "summary_en": "Hooks, MCP auto-approval and ANTHROPIC_BASE_URL in a repository's .claude/settings.json could run commands and steal API keys before the trust dialog."
+  },
+  {
+   "id": "cve-2026-33068",
+   "date": "2026-03-19",
+   "title": "Claude Code 신뢰 대화상자 생략(CVE-2026-33068)",
+   "summary": "저장소 설정에 defaultMode bypassPermissions가 있으면 신뢰 대화상자가 생략됐다. 2.1.53에서 수정.",
+   "url": "https://github.com/advisories/GHSA-mmgp-wc2j-qcv7",
+   "title_en": "Claude Code trust dialog skipped (CVE-2026-33068)",
+   "summary_en": "defaultMode bypassPermissions in repository settings skipped the trust dialog. Fixed in 2.1.53."
+  },
+  {
+   "id": "codex-cve-2025-61260",
+   "date": "2026-04-14",
+   "title": "Codex CLI 프로젝트 설정 명령 실행(CVE-2025-61260)",
+   "summary": "저장소의 .codex/config.toml을 확인 없이 읽어 악성 MCP 설정의 명령이 바로 실행됐다.",
+   "url": "https://github.com/advisories/GHSA-xrxf-jgv3-qmrm",
+   "title_en": "Codex CLI command execution via project config (CVE-2025-61260)",
+   "summary_en": "Codex read a repository's .codex/config.toml without confirmation, so commands in a malicious MCP config ran immediately."
+  },
+  {
+   "id": "sandworm-mode-2026",
+   "date": "2026-02-23",
+   "title": "SANDWORM_MODE npm 웜",
+   "summary": "AI 도구 설정의 mcpServers에 악성 서버를 몰래 추가하고 SSH 키·클라우드 자격 증명을 넘기라는 숨은 지시를 붙였다.",
+   "url": "https://endorlabs.com/learn/sandworm-mode-dissecting-a-multi-stage-npm-supply-chain-attack",
+   "title_en": "SANDWORM_MODE npm worm",
+   "summary_en": "Secretly added malicious servers to AI tool mcpServers configs, with hidden instructions to hand over SSH keys and cloud credentials."
+  },
+  {
+   "id": "bitwarden-cli-2026",
+   "date": "2026-04-23",
+   "title": "@bitwarden/cli 2026.4.0 악성 버전",
+   "summary": "정상 패키지 이름으로 배포된 악성 버전이 설치(preinstall) 때 SSH 키·.env·클라우드 자격 증명과 함께 ~/.claude.json, ~/.claude/mcp.json 같은 AI·MCP 설정 파일을 수집했다.",
+   "url": "https://research.jfrog.com/post/bitwarden-cli-hijack/",
+   "title_en": "Malicious @bitwarden/cli 2026.4.0",
+   "summary_en": "A malicious release under the legitimate package name collected AI and MCP config files such as ~/.claude.json and ~/.claude/mcp.json at install (preinstall), along with SSH keys, .env files and cloud credentials."
+  },
+  {
+   "id": "copilot-cve-2025-53773",
+   "date": "2025-08-12",
+   "title": "GitHub Copilot·VS Code 원격 코드 실행(CVE-2025-53773)",
+   "summary": "프롬프트 인젝션으로 에이전트가 설정 파일에 chat.tools.autoApprove를 true로 써 넣어 이후 명령을 승인 없이 실행하게 만들었다.",
+   "url": "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2025-53773",
+   "title_en": "GitHub Copilot / VS Code remote code execution (CVE-2025-53773)",
+   "summary_en": "Prompt injection made the agent write chat.tools.autoApprove = true into a settings file, so later commands ran without approval."
+  },
+  {
+   "id": "oasis-cursor-2025",
+   "date": "2025-09-10",
+   "title": "Cursor 작업 공간 신뢰 기본 꺼짐(Oasis Security)",
+   "summary": "작업 공간 신뢰가 꺼진 채 배포돼, 저장소의 .vscode/tasks.json에 있는 folderOpen 작업이 폴더를 열기만 해도 실행됐다는 보고.",
+   "url": "https://www.oasis.security/blog/cursor-security-flaw",
+   "title_en": "Cursor ships with workspace trust off (Oasis Security)",
+   "summary_en": "Reported that because workspace trust was off by default, a folderOpen task in a repository's .vscode/tasks.json ran just by opening the folder."
+  },
+  {
+   "id": "cursor-mcpoison-2025",
+   "date": "2025-08-01",
+   "title": "Cursor MCPoison(CVE-2025-54136)",
+   "summary": "한 번 승인한 저장소의 MCP 설정을 몰래 바꿔도 다시 묻지 않아, 협업자가 MCP 서버 명령을 악성으로 바꿀 수 있었다.",
+   "url": "https://github.com/cursor/cursor/security/advisories/GHSA-24mc-g4xr-4395",
+   "title_en": "Cursor MCPoison (CVE-2025-54136)",
+   "summary_en": "Once a repository's MCP config was approved, silent changes were not re-confirmed, so a collaborator could swap an MCP server command for a malicious one."
+  },
+  {
+   "id": "gemini-cve-2026-12537",
+   "date": "2026-04-24",
+   "title": "Gemini CLI 폴더 자동 신뢰(CVE-2026-12537)",
+   "summary": "헤드리스 실행에서 폴더를 자동으로 신뢰해 저장소의 .gemini/.env를 읽고, --yolo일 때 도구 허용 목록을 무시했다. 0.39.1에서 수정.",
+   "url": "https://github.com/advisories/GHSA-wpqr-6v78-jr5g",
+   "title_en": "Gemini CLI automatic folder trust (CVE-2026-12537)",
+   "summary_en": "In headless runs the folder was trusted automatically, so the repository's .gemini/.env was read and the tool allow-list was ignored with --yolo. Fixed in 0.39.1."
+  },
+  {
+   "id": "tracebit-gemini-2025",
+   "date": "2025-07-28",
+   "title": "Gemini CLI 허용 목록 우회(Tracebit)",
+   "summary": "README에 숨긴 지시와 허용된 명령 접두사 뒤에 붙인 악성 명령으로 승인 없이 실행하고 환경 변수를 빼냈다.",
+   "url": "https://tracebit.com/blog/code-exec-deception-gemini-ai-cli-hijack",
+   "title_en": "Gemini CLI allow-list bypass (Tracebit)",
+   "summary_en": "Instructions hidden in a README plus a malicious command appended to an allowed command prefix ran without approval and exfiltrated environment variables."
+  }
+ ]
+}

@@ -1,0 +1,21 @@
+ai-tool-audit — 제3자 고지 / Third-party notices
+=================================================
+
+1. GitHub Advisory Database
+   파일: src/ai_tool_audit/data/advisories.json
+   출처: https://github.com/advisories (https://github.com/github/advisory-database)
+   라이선스: Creative Commons Attribution 4.0 International (CC-BY 4.0)
+            https://creativecommons.org/licenses/by/4.0/
+   변경: 일부 npm 패키지(AI 코딩 도구와 MCP 관련 패키지)의 권고만 골라
+         패키지·권고 ID·CVE·심각도·요약·영향 범위·수정 버전·주소 필드로 줄였습니다.
+         갱신 스크립트: scripts/update_advisories.py
+
+2. 근거 사건 요약(data/incidents.yaml)
+   각 항목에 원문 주소를 적었습니다. 요약은 이 프로젝트가 직접 작성했습니다.
+
+3. 토큰 형식 패턴(src/ai_tool_audit/redact.py의 KNOWN_TOKENS)
+   각 서비스가 공개한 토큰 접두어를 바탕으로 이 프로젝트가 직접 작성했습니다.
+   다른 프로젝트의 규칙 파일을 복사하지 않았습니다.
+
+선택 의존성(함께 배포하지 않음)
+   mcp (Model Context Protocol Python SDK) — MIT License — `pip install ai-tool-audit[mcp]`일 때만 설치

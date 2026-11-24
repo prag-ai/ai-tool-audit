@@ -1,0 +1,291 @@
+# English text for every rule (rules/*.yaml holds the Korean text and the detection logic).
+# scripts/build_rules.py fails if a rule is missing here.
+rules:
+  CC-PERM-001:
+    title: Permission mode that runs everything without asking (bypassPermissions)
+    why: In this mode Claude Code runs shell commands and writes files — even to protected paths such as .git and .claude — without asking. The official docs say to use it only in isolated environments such as containers or VMs.
+    fix: Set defaultMode back to default and use this mode only inside an isolated container. On corporate machines, set permissions.disableBypassPermissionsMode = "disable" in managed settings.
+  CC-PERM-002:
+    title: Repository settings contain bypassPermissions
+    why: Permission checks can be switched off on the machine of whoever clones the repository. The effect depends on the version; older versions also skipped the trust dialog.
+    fix: Remove the value from the repository's .claude/settings.json and settings.local.json, and update Claude Code.
+  CC-PERM-003:
+    title: Bypass-mode confirmation is skipped (bypass mode has been used)
+    why: Claude Code writes this value when a user accepts the bypass-mode warning, so bypass mode has actually been used on this machine.
+    fix: Find out where and why bypass mode was used, and remove the value if it is not needed.
+  CC-PERM-004:
+    title: Shell startup file or alias disables permission checks
+    why: An alias or script with this flag runs Claude Code without permission checks every time. The Nx supply-chain attack used exactly this flag to run installed AI CLIs and hunt for secrets.
+    fix: Remove the flag from aliases and scripts. For automation, list only the allowed commands in permissions.allow.
+  CC-PERM-005:
+    title: Every shell command is allowed without asking (Bash wildcard)
+    why: With Bash fully allowed, any shell command the AI produces runs without confirmation — including commands injected through prompt injection.
+    fix: Replace the wildcard with specific commands such as Bash(npm test).
+  CC-PERM-006:
+    title: All URLs or all tools of an MCP server are allowed
+    why: Allowing WebFetch for every site lets the agent read anything without asking, which opens a prompt-injection channel. Allowing a whole MCP server also auto-approves its write tools.
+    fix: List only the needed domains (WebFetch(domain:docs.example.com)) and tools (mcp__server__tool).
+  CC-MCP-001:
+    title: All repository MCP servers are approved without asking (enableAllProjectMcpServers)
+    why: Any server added to the repository's .mcp.json connects without confirmation. An MCP server is a program that runs on the user's machine.
+    fix: Remove this value and list only the servers you use in enabledMcpjsonServers.
+  CC-HOOK-001:
+    title: Repository settings contain hooks (auto-run commands)
+    why: Repository hooks run as shell commands on the machine of whoever clones the repository, at session start or on every tool call.
+    fix: Read the hook commands and remove any you do not recognize. On corporate machines, set allowManagedHooksOnly in managed settings.
+  CC-HOOK-002:
+    title: HTTP hook sends data out with no URL restriction
+    why: An HTTP hook posts event JSON, including tool inputs and outputs, to the given URL. Without allowedHttpHookUrls it can send to any address.
+    fix: Check the hook URL and list only permitted addresses in allowedHttpHookUrls.
+  CC-HOOK-003:
+    title: Repository settings contain auto-run command keys (apiKeyHelper, etc.)
+    why: These are not called hooks, but the shell commands in them still run automatically.
+    fix: Review the commands and consider moving them from the repository to user settings.
+  CC-SEC-001:
+    title: Secret written directly in a settings env block
+    why: Settings files are targets for backups, sync and malicious packages' file collectors. In repository settings, the key gets committed.
+    fix: Remove the value and load it from the keychain, a secrets manager or another safe store.
+  CC-SEC-003:
+    title: Login credential file permissions are too broad
+    why: With permissions wider than 600, other accounts or processes on the same machine can read the login token.
+    fix: Restrict it with chmod 600.
+  CC-SEC-004:
+    title: On macOS, credentials are stored in a file instead of the Keychain
+    why: macOS normally uses the Keychain. This file means the Keychain write failed and a plaintext file was used instead.
+    fix: Check the file permissions and log in again to see whether the Keychain is used.
+  CC-SEC-006:
+    title: Repository settings change the API endpoint (ANTHROPIC_BASE_URL)
+    why: Redirecting API requests through repository settings sends the API key and conversations to that server. Check Point demonstrated key theft this way (fixed in 2.0.65).
+    fix: Remove ANTHROPIC_BASE_URL from repository settings. If you need a corporate gateway, set it in managed settings.
+  CC-MGMT-002:
+    title: Managed settings lack the key lock-down options
+    why: Without managed settings or lock-down keys, user and repository settings override company policy.
+    fix: Set permissions.disableBypassPermissionsMode, allowManagedHooksOnly and allowManagedMcpServersOnly in managed-settings.json.
+  CD-MGMT-001:
+    title: No Claude Desktop enterprise policy, or extensions can still open local MCP
+    why: Without a policy, local MCP, desktop extensions and Claude Code are all on by default. Turning off local MCP alone still lets desktop extensions run local servers. The policy file paths come from third-party deployment docs and need confirmation.
+    fix: Set isLocalDevMcpEnabled and isDesktopExtensionEnabled together via a managed profile (macOS) or the registry (Windows).
+  CX-PERM-001:
+    title: Runs with full access and no sandbox (danger-full-access)
+    why: Commands the model runs reach the whole machine without OS-level isolation.
+    fix: Set sandbox_mode to workspace-write or read-only.
+  CX-PERM-002:
+    title: Never asks for approval (approval_policy = never)
+    why: No approval prompt appears, so commands chosen by the model run immediately. Unless the sandbox is read-only, file changes and execution are not confirmed either.
+    fix: Set approval_policy to on-request.
+  CX-PERM-003:
+    title: Shell startup file or alias disables approvals and the sandbox
+    why: With this in an alias, Codex runs every time without approvals or isolation.
+    fix: Remove the flag from aliases and scripts.
+  CX-PERM-004:
+    title: Network allowed inside the sandbox
+    why: Commands run through prompt injection can send data out. The official docs also mark this as elevated risk.
+    fix: Turn off network_access and approve network tasks individually.
+  CX-PERM-005:
+    title: Removed or deprecated approval policy value
+    why: untrusted has been removed and on-failure is deprecated. Behavior may differ from what you expect, or Codex may fail to start.
+    fix: Change it to on-request.
+  CX-PERM-007:
+    title: Full-access warning is hidden
+    why: Someone turned off the warning that Codex is running with full access.
+    fix: Remove this value.
+  CX-MCP-001:
+    title: MCP tool approval mode is not prompt (ask every time)
+    why: The official docs do not explain values other than writes, so some tools may run without asking. Needs review.
+    fix: Use prompt for tools that write or send data out.
+  CX-HOOK-001:
+    title: Shell startup file or alias skips hook trust checks
+    why: Hooks the user never reviewed run as-is.
+    fix: Remove the flag and review hooks with /hooks.
+  CX-HOOK-002:
+    title: A trusted project contains hooks
+    why: The .codex/ hooks of a repository marked trusted run whenever Codex is used in that repository.
+    fix: Review the hook commands and set trust_level to untrusted for repositories you don't know.
+  CX-HOOK-003:
+    title: Notification command (notify) is configured
+    why: Besides hooks, Codex runs this command on every event. Listed for review.
+    fix: Check what the command does.
+  CX-SEC-001:
+    title: Login token file (auth.json) permissions are too broad
+    why: The official docs say to treat auth.json like a password. With broad permissions, other accounts can read the token.
+    fix: Restrict it with chmod 600, or set cli_auth_credentials_store = "keyring" to use the OS credential store.
+  CX-SEC-002:
+    title: Credentials are configured to be stored in a plaintext file
+    why: Tokens stay in a plaintext file instead of an OS store such as the Keychain.
+    fix: Change it to keyring or auto.
+  CX-SEC-003:
+    title: Model provider token written in the config file (experimental_bearer_token)
+    why: The official docs discourage this. The token stays in the config file in plaintext.
+    fix: Use env_key to name an environment variable instead.
+  CX-SEC-004:
+    title: Shell environment variables may be passed to commands the model runs
+    why: Per the official docs we reviewed, with shell_environment_policy defaults even variables named *KEY*, *SECRET* or *TOKEN* are passed to commands. How the default is interpreted may vary by version, so this needs review.
+    fix: Set inherit = "core" or exclude rules under [shell_environment_policy].
+  CX-MGMT-001:
+    title: No enterprise requirements (requirements.toml)
+    why: The company cannot enforce which approval policies, sandbox modes and MCP servers are allowed.
+    fix: Define allowed_approval_policies, allowed_sandbox_modes and mcp_servers in requirements.toml (or MDM requirements_toml_base64).
+  ALL-MCP-001:
+    title: Secret written directly in an MCP server config
+    why: MCP config files are a target for malicious packages' file collectors. env and headers values should be environment variable references such as ${VAR}.
+    fix: Remove the value, switch to a ${VAR} reference, and reissue the key (treat it as already exposed).
+  ALL-MCP-002:
+    title: MCP server runs without a pinned version (npx, uvx, …)
+    why: The latest version is fetched on every run. If a legitimate package turns malicious in an update, it runs from the next start.
+    fix: Pin a verified version, e.g. package@1.2.3.
+  ALL-MCP-004:
+    title: Remote MCP server over unencrypted http
+    why: Someone in the middle can alter responses and inject malicious tool descriptions or auth endpoints.
+    fix: Use an https URL.
+  ALL-SEC-001:
+    title: AI service API key in plaintext in a shell startup file
+    why: Shell startup files are readable by every program and are collected by backups, sync and malicious packages. The key is also passed as an environment variable to commands AI tools run.
+    fix: Keep keys in the OS keychain or a secrets manager and load them only when needed. Treat the key as exposed and reissue it.
+  ALL-SEC-003:
+    title: Token in a known format found in AI tool config or shell startup files
+    why: A real token matching a service's format (GitHub, OpenAI, Anthropic, AWS, …) is stored in plaintext in a file that malicious packages' collectors target.
+    fix: Reissue the key (treat it as exposed) and reference it through an environment variable.
+  ALL-MCP-005:
+    title: Filesystem MCP server can access the root or entire home directory
+    why: MCP servers run with user privileges. Passing the whole home directory lets the AI read SSH keys and cloud credentials.
+    fix: Pass only the folders the task needs.
+  ALL-MCP-006:
+    title: Repository ships an MCP server
+    why: A repository's MCP config is a command that runs on the machine of whoever opens it. Vulnerabilities have let it be swapped after approval, or created by an agent.
+    fix: Review the server command and pin its version. Do not approve MCP config from repositories you don't know.
+  ALL-VER-001:
+    title: Using a version with a published security advisory
+    why: An installed AI tool or a pinned MCP package falls within the affected range of a GitHub security advisory, and a fixed version is available. Severity follows the highest matching advisory.
+    fix: Upgrade to at least the version shown. If the tool is installed more than once, remove the copies you don't use.
+  ALL-BASE-001:
+    title: MCP server added or changed since the baseline
+    why: An MCP server you didn't register, or a changed command, may mean a malicious package edited the config. An npm worm has secretly added malicious MCP servers to AI tool configs.
+    fix: Confirm whether you made the change. If so, save a new baseline with ai-tool-audit baseline save.
+  VSC-PERM-001:
+    title: All AI tools are auto-approved (chat.tools.global.autoApprove)
+    why: In the docs' own words, this disables critical security protections. File edits, commands and external tool calls run without asking. A vulnerability once let prompt injection write this value.
+    fix: Set it to false (the default). Allow only specific commands in chat.tools.terminal.autoApprove.
+  VSC-PERM-002:
+    title: Terminal auto-approval includes a general runner, a catch-all pattern or a risky command
+    why: Allowing runners such as bash, python or node, or a pattern like '/.*/', effectively auto-runs every command. Switching default-deny commands such as rm or curl to allow is also a warning sign.
+    fix: Remove runners and catch-all patterns, and keep only exact commands such as '/^npm run lint$/'.
+  VSC-PERM-004:
+    title: Default terminal deny rules are ignored
+    why: The default deny list (rm, curl, eval, …) no longer applies.
+    fix: Set it to false.
+  VSC-PERM-005:
+    title: All file edits are auto-approved
+    why: A broad glob such as **/* also auto-approves edits to .vscode settings and .env. The agent could edit its own settings to turn on auto-approval.
+    fix: Remove the broad glob and allow only the needed folders.
+  VSC-PERM-006:
+    title: All URLs are auto-approved
+    why: The agent can send data out, or take in injected responses, without review.
+    fix: Allow only the domains you need.
+  VSC-PERM-007:
+    title: Agent default permission level is an allow-all variant
+    why: Allow all, Bypass and Full Access remove the chance to review tool calls. The exact setting values could not be confirmed in the docs, so this needs review.
+    fix: Set the default permission level to Manual (the default).
+  VSC-PERM-008:
+    title: Terminal confirmation prompts are answered automatically
+    why: The agent automatically answers prompts such as [y/N] with the default.
+    fix: Set it to false (the default).
+  VSC-WS-001:
+    title: Repository settings change AI or auto-run keys
+    why: A repository's .vscode/settings.json applies to whoever opens it, so the repository can bring its own AI auto-approval, MCP, automatic tasks or trust settings.
+    fix: Remove these keys from repository settings and decide them in user settings.
+  VSC-TRUST-001:
+    title: Workspace trust (Restricted Mode) is disabled
+    why: Opening an unknown repository no longer starts in Restricted Mode, so tasks, debugging, workspace settings, extensions and AI agents work immediately.
+    fix: Set it back to true (the default).
+  VSC-TRUST-002:
+    title: Untrusted single files open in a trusted window without asking
+    why: Files outside trust open in a trusted window.
+    fix: Keep the default (prompt).
+  VSC-TASK-001:
+    title: Automatic tasks run on folder open without asking (task.allowAutomaticTasks = on)
+    why: folderOpen tasks in trusted folders run without asking.
+    fix: Set it to off (the default).
+  VSC-TASK-002:
+    title: Repository task runs when the folder is opened (runOn = folderOpen)
+    why: Just opening the repository can run a command. It runs immediately if workspace trust is off or automatic tasks are allowed.
+    fix: Check the task command. Remove such tasks from unknown repositories and turn workspace trust on.
+  VSC-MCP-003:
+    title: MCP discovery from other tools is on (chat.mcp.discovery.enabled)
+    why: MCP servers registered in other tools such as Claude Desktop or Cursor are attached to VS Code too, so they need to be reviewed together.
+    fix: Turn it off if you don't need it.
+  VSC-EXT-001:
+    title: An archived (discontinued) AI extension is installed
+    why: The Roo Code repository has been archived and will not receive security fixes.
+    fix: Uninstall it and switch to a maintained extension.
+  VSC-EXT-002:
+    title: Amazon Q extension 1.84.0 with a malicious prompt is installed
+    why: This version shipped a prompt telling the agent to wipe files and cloud resources. AWS told users to remove it and upgrade to 1.85.0 or later.
+    fix: Upgrade the extension to 1.85.0 or later.
+  CUR-TRUST-001:
+    title: Workspace trust is not turned on in Cursor
+    why: A security firm reported that Cursor ships with workspace trust off, so a repository's folderOpen task ran as soon as the folder was opened. The default could not be confirmed in official docs, so this needs review.
+    fix: Set "security.workspace.trust.enabled" to true in Cursor user settings. Enterprises can use the WorkspaceTrustEnabled policy.
+  CUR-PERM-001:
+    title: Broad allow rules in Cursor CLI permissions
+    why: All shell commands, file writes, MCP tools or web requests are allowed without confirmation.
+    fix: List only the needed commands, paths and tools.
+  CUR-PERM-002:
+    title: Repository ships auto-run review instructions (.cursor/permissions.json)
+    why: A repository can push the auto-review classifier toward allowing commands. The docs themselves say the classifier is not a security boundary.
+    fix: Read the instructions and remove the file from repositories you don't know.
+  CUR-SBX-001:
+    title: Repository sandbox settings extend reads to sensitive folders
+    why: A project sandbox.json takes precedence over user settings, so a repository can add folders such as ~/.ssh or ~/.aws to the read scope.
+    fix: Remove additionalReadPaths from the repository.
+  GM-PERM-001:
+    title: Shell startup file or alias auto-approves every tool (--yolo)
+    why: Every tool call runs without approval. The Nx supply-chain attack ran installed Gemini CLIs with this flag.
+    fix: Remove the flag from aliases and scripts.
+  GM-PERM-002:
+    title: Default approval mode auto-approves edits (auto_edit)
+    why: File edit tools run without confirmation.
+    fix: Set it to default.
+  GM-PERM-003:
+    title: Every shell command is allowed without confirmation (run_shell_command wildcard)
+    why: Allowing it without arguments auto-runs every shell command. Attackers have also bypassed allow-lists by appending commands after an allowed prefix.
+    fix: List only specific commands such as run_shell_command(git status).
+  GM-PERM-004:
+    title: Folder trust is disabled
+    why: Project settings, .env files and MCP servers from untrusted folders apply as-is.
+    fix: Set it back to true (the default).
+  GM-PERM-006:
+    title: Permanent tool approval (allow for all future sessions) is on
+    why: An approval clicked once is written to a policy file and keeps applying in later sessions.
+    fix: Turn it off if not needed, and review the allow rules in ~/.gemini/policies/.
+  GM-SBX-001:
+    title: Network allowed inside the sandbox
+    why: Commands run inside the sandbox can send data out.
+    fix: Set it to false (the default).
+  GM-MCP-001:
+    title: All tool confirmations skipped for an MCP server (trust = true)
+    why: In the docs' own words, this bypasses all tool call confirmations for the server, including tools that write or send data out.
+    fix: Remove trust and pick only the needed tools with includeTools.
+  GM-MCP-002:
+    title: MCP server name contains an underscore (_)
+    why: The official docs warn that an underscore in a server name can make the policy engine misread it, so security policies fail silently.
+    fix: Use a hyphen (-) instead.
+  GM-HOOK-001:
+    title: Repository settings contain hooks (auto-run commands)
+    why: Hooks run arbitrary commands with the user's privileges (official docs warning).
+    fix: Check the hook commands and remove any you don't recognize.
+  GM-SEC-001:
+    title: API key in plaintext in the repository's .gemini/.env
+    why: Files inside a repository are easy to commit by accident, and in a folder-trust bypass this file was read directly.
+    fix: Move the key to your user folder (~/.gemini/.env) or a secrets manager, and check .gitignore.
+  GM-SEC-003:
+    title: MCP OAuth token file permissions are too broad
+    why: With broad permissions, other accounts can read MCP server auth tokens.
+    fix: Restrict it with chmod 600.
+  GM-MGMT-001:
+    title: System settings do not block YOLO mode
+    why: Users can auto-approve every tool with --yolo.
+    fix: Set security.disableYoloMode or admin.secureModeEnabled in the system settings.json.
+  GM-MGMT-002:
+    title: An environment variable overrides the system settings path
+    why: Users can point Gemini CLI at a different file than the admin's system settings and bypass policy.
+    fix: Remove the variable. Enterprises can pin the path with a wrapper script (as the docs recommend).

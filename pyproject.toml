@@ -1,0 +1,45 @@
+[project]
+name = "ai-tool-audit"
+version = "0.1.0"
+description = "개발자 PC의 AI 도구(Claude Code·Codex·Gemini CLI·VS Code·Cursor·MCP) 설정을 읽기 전용으로 점검하는 도구"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "prag-ai", email = "macro@prag-ai.com" }]
+keywords = ["security", "ai", "mcp", "claude-code", "codex", "gemini-cli", "cursor", "vscode", "audit"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: Apache Software License",
+  "Natural Language :: Korean",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: Security",
+]
+dependencies = []          # 점검기 본체는 표준 라이브러리만 쓴다
+
+[project.urls]
+Homepage = "https://github.com/prag-ai/ai-tool-audit"
+Issues = "https://github.com/prag-ai/ai-tool-audit/issues"
+
+[project.optional-dependencies]
+mcp = ["mcp>=2.3"]
+
+[project.scripts]
+ai-tool-audit = "ai_tool_audit.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "pyyaml>=6"]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_tool_audit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

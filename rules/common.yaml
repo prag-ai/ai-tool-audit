@@ -1,0 +1,83 @@
+# 도구 공통 규칙(MCP 서버, 셸 시작 파일). 근거: docs/research/01·02·03.
+rules:
+  - id: ALL-MCP-001
+    tool: 공통
+    title: MCP 서버 설정에 비밀값이 직접 적혀 있음
+    severity: 높음
+    detect: {type: check, name: mcp_literal_secret}
+    why: MCP 설정 파일은 악성 패키지의 파일 수집기가 노리는 곳이다. env·headers 값은 ${VAR}처럼 환경 변수 참조로 두어야 한다.
+    fix: 값을 지우고 ${VAR} 참조로 바꾼 뒤, 키를 다시 발급한다(이미 노출된 것으로 본다).
+    incidents: [bitwarden-cli-2026]
+
+  - id: ALL-MCP-002
+    tool: 공통
+    title: 버전을 고정하지 않고 실행하는 MCP 서버(npx·uvx 등)
+    severity: 중간
+    detect: {type: check, name: mcp_unpinned}
+    why: 실행할 때마다 최신 버전을 받는다. 정상 패키지가 악성 업데이트로 바뀌면 다음 실행부터 그대로 돈다.
+    fix: 패키지@1.2.3 처럼 검증한 버전을 고정한다.
+    incidents: [postmark-mcp-2025]
+
+  - id: ALL-MCP-004
+    tool: 공통
+    title: 암호화하지 않은 http 주소의 원격 MCP 서버
+    severity: 중간
+    detect: {type: check, name: mcp_plain_http}
+    why: 중간에서 응답을 바꿔 악성 도구 설명이나 인증 주소를 끼워 넣을 수 있다.
+    fix: https 주소를 쓴다.
+    incidents: [mcp-remote-2025]
+
+  - id: ALL-SEC-001
+    tool: 공통
+    title: 셸 시작 파일에 AI 서비스 API 키가 평문으로 있음
+    severity: 중간
+    detect:
+      type: shell_regex
+      secret: true
+      regex: '^\s*(?:export\s+)?(?P<name>ANTHROPIC_API_KEY|ANTHROPIC_AUTH_TOKEN|CLAUDE_CODE_OAUTH_TOKEN|OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN|GEMINI_API_KEY|GOOGLE_API_KEY)\s*=\s*["'']?(?P<value>[^"''\s$][^"''\s]{7,})'
+    why: 셸 시작 파일은 모든 프로그램이 읽을 수 있고, 백업·동기화·악성 패키지의 수집 대상이다. AI 도구가 실행하는 명령에도 환경 변수로 넘어간다.
+    fix: 키를 OS 키체인이나 비밀 관리 도구에 두고 필요할 때만 불러온다. 이미 노출된 것으로 보고 키를 다시 발급한다.
+    incidents: [nx-s1ngularity-2025]
+
+  - id: ALL-SEC-003
+    tool: 공통
+    title: AI 도구 설정·셸 시작 파일에 알려진 형식의 토큰이 있음
+    severity: 높음
+    detect: {type: check, name: known_tokens}
+    why: GitHub·OpenAI·Anthropic·AWS 등 서비스별 형식과 일치하는 실제 토큰이 평문으로 있다. 악성 패키지의 파일 수집기가 노리는 파일이다.
+    fix: 키를 다시 발급하고(이미 노출된 것으로 본다), 설정에는 환경 변수 참조로 넣는다.
+    incidents: [bitwarden-cli-2026]
+
+  - id: ALL-MCP-005
+    tool: 공통
+    title: 파일시스템 MCP 서버가 루트·홈 폴더 전체에 접근
+    severity: 중간
+    detect: {type: check, name: mcp_broad_fs}
+    why: MCP 서버는 사용자 권한으로 돈다. 홈 전체를 넘기면 SSH 키·클라우드 자격 증명까지 AI가 읽을 수 있다.
+    fix: 작업에 필요한 폴더만 넘긴다.
+
+  - id: ALL-MCP-006
+    tool: 공통
+    title: 저장소가 MCP 서버를 들고 옴
+    severity: 중간
+    detect: {type: check, name: mcp_repo_servers}
+    why: 저장소의 MCP 설정은 그 저장소를 연 사람 PC에서 실행되는 명령이다. 승인한 뒤 몰래 바꾸거나, 에이전트가 새로 만들게 한 취약점이 있었다.
+    fix: 서버 명령을 확인하고 버전을 고정한다. 모르는 저장소의 MCP 설정은 승인하지 않는다.
+    incidents: [cursor-mcpoison-2025, codex-cve-2025-61260]
+
+  - id: ALL-VER-001
+    tool: 공통
+    title: 공개 보안 권고가 있는 버전을 쓰고 있음
+    severity: 높음
+    detect: {type: check, name: version_advisories}
+    why: 설치된 AI 도구나 버전을 고정한 MCP 패키지가 GitHub 보안 권고의 영향 범위에 들어 있다. 고친 버전이 나와 있는데 올리지 않은 상태다. 심각도는 해당 권고 중 가장 높은 것을 따른다.
+    fix: 표시된 버전 이상으로 올린다. 같은 도구가 여러 벌 설치돼 있으면 쓰지 않는 설치는 지운다.
+
+  - id: ALL-BASE-001
+    tool: 공통
+    title: 기준선 이후 새로 생기거나 바뀐 MCP 서버
+    severity: 중간
+    detect: {type: check, name: baseline_changes}
+    why: 직접 등록하지 않은 MCP 서버가 설정에 생기거나 실행 명령이 바뀌었다면 악성 패키지가 설정을 고쳤을 수 있다. 실제로 npm 웜이 AI 도구 설정에 악성 MCP 서버를 몰래 추가한 사례가 있다.
+    fix: 본인이 바꾼 것인지 확인한다. 맞으면 ai-tool-audit baseline save로 기준선을 새로 저장한다.
+    incidents: [sandworm-mode-2026]
