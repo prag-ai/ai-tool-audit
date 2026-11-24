@@ -155,9 +155,9 @@ MCP drift detection (`baseline diff`): a server silently added and another one s
 
 - Settings that never reach a file (session-only `/yolo`, server-side team policies) are out of reach.
 - Settings whose storage location is undocumented (e.g. Cursor run modes) are not checked.
-- Advisory data is as of the release date. Cursor's own advisories are not matched yet.
+- Advisory data is as of the release date. Matching Cursor's own advisories is planned for the next release.
 - Incident notes and rule texts were written in Korean first and translated; please open an issue if a translation reads wrong.
-- Tested on macOS and Linux. Windows paths are included but not yet verified on a real Windows machine.
+- Supports macOS and Linux. Full Windows support is planned for the next release.
 
 ## References
 
